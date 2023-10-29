@@ -3,11 +3,12 @@ import 'package:xml/xml.dart';
 class ChildAndParents{
   final XmlNode child;
   final List<XmlElement> parents;
+  final int id;
 
-  ChildAndParents({required this.child, required this.parents});
+  ChildAndParents({required this.child, required this.parents,this.id=0});
 
   @override
   String toString() {
-    return "${child.text} ${parents.map((e) => e.name.qualified).join(" ")}";
+    return "id=$id {${child.text} <${parents.map((e) => e.name.qualified).join(" ")}}>";
   }
 }

@@ -44,7 +44,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    TextDecorator.heightCounter = 0;
     return Scaffold(
       body: SafeArea(child: ListView(children: [
         FutureBuilder<ByteData>(future: rootBundle.load("assets/books/book5.fb2"), builder: (BuildContext context, AsyncSnapshot<ByteData> snapshot) {

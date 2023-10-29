@@ -27,10 +27,10 @@ class HyphenatedTextFactory {
     final sections = document
         .findAllElements("body")
         .map((e) => XmlDecoder.decodeXml(e))
-        .expand((element) => element);
-    final elements = sections.map((e) => TextDecorator.fb2Decorate(e))
-        .toList();
-    sections.take(100).forEach((element) {
+        .expand((element) => element).toList();
+    final elements = TextDecorator.combine(sections);
+    // final elements = sections.map((e) => TextDecorator.fb2Decorate(e)).toList();
+    sections.take(300).forEach((element) {
       print(element);
     });
     return HyphenatedText(
