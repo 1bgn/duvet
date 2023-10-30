@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:projects/domain/model/child_and_parents.dart';
 import 'package:projects/domain/model/decorated_node.dart';
 import 'package:projects/domain/model/styled_node.dart';
+import 'package:projects/test_xml/xml_tester.dart';
 import 'package:xml/xml.dart';
 
 import '../hyphenator/hyphenator.dart';
@@ -74,24 +75,98 @@ class TextDecorator {
   }
 
   static List<InlineSpan> combine(List<ChildAndParents> elements){
+    // return elements.map(createStyledNode).map((e) => TextSpan(text: "${e.childAndParents.child.text}\n",style: e.textStyle)).toList();
     List<InlineSpan> combinedElements = [];
+    List<ChildAndParents> childCombinedElements = [];
 
-    for(int i =0;i<elements.length-1;i++){
-      final element1 =elements[i];
-      final element2 =elements[i+1];
-      // print(element1.toString() +" "+ element2.toString());
+    int lastId = -1;
+    InlineSpan? lastSpan;
+    StyledNode? lastNode;
+    ChildAndParents? lastElement;
 
-      if(element1.id==element2.id){
-
-        combinedElements.add(mergeChild(createStyledNode(element1), createStyledNode(element2)));
-        i=i+1;
-        print("MERGE ${element1} ${element2}");
+    for(int i =0;i<elements.length;i++){
+      var currentElement =elements[i];
+      if(lastElement==null){
+        combinedElements.add(isInlineNode(currentElement)?createInlineSpan(createStyledNode(currentElement)):createBlockSpan(createStyledNode(currentElement)));
       }else{
-        final elem = createStyledNode(element1);
-        combinedElements.add(TextSpan(text: "${elem.childAndParents.child.text}\n",style: elem.textStyle));
+        //lastElement != null
+        if(isInlineNode(lastElement)&&isInlineNode(currentElement)){
+         combinedElements.add(createInlineSpan(createStyledNode(currentElement)));
+        }else if(isInlineNode(lastElement)&& !isInlineNode(currentElement)){
+
+
+          if(lastElement.id==currentElement.id){
+            combinedElements.add(createInlineSpan(createStyledNode(currentElement)));
+          }else{
+            combinedElements.removeLast();
+            combinedElements.add(createBlockSpan(createStyledNode(lastElement)));
+            combinedElements.add(createBlockSpan(createStyledNode(currentElement)));
+
+          }
+        }else if(!isInlineNode(lastElement)&& isInlineNode(currentElement)){
+
+          if(lastElement.id==currentElement.id){
+            combinedElements.removeLast();
+            combinedElements.add(createInlineSpan(createStyledNode(lastElement)));
+            combinedElements.add(createInlineSpan(createStyledNode(currentElement)));
+          }else{
+            combinedElements.add(createBlockSpan(createStyledNode(currentElement)));
+
+          }
+
+        }else if(!isInlineNode(lastElement)&& !isInlineNode(currentElement)){
+
+            combinedElements.add(createBlockSpan(createStyledNode(currentElement)));
+
+
+
+        }
       }
+      lastElement = currentElement;
+      // if(lastNode==null ){
+      //   lastNode = createStyledNode(currentElement);
+      //   lastSpan = createInlineSpan(lastNode);
+      // }else if(lastNode !=null){
+      //   if(!isInlineNode(lastNode.childAndParents)&&!isInlineNode(currentElement)){
+      //     combinedElements.add(createBlockSpan(lastNode));
+      //     combinedElements.add(createBlockSpan(createStyledNode(currentElement)));
+      //     lastNode = null;
+      //     lastSpan = null;
+      //   }else if(isInlineNode(lastNode.childAndParents)&&!isInlineNode(currentElement)){
+      //     final elem = mergeChild3(createInlineSpan(lastNode), createBlockSpan(createStyledNode(currentElement)));
+      //     combinedElements.add(elem);
+      //     lastSpan = null;
+      //     lastNode = null;
+      //   }else if(!isInlineNode(lastNode.childAndParents)&&isInlineNode(currentElement)){
+      //     final elem = mergeChild3(createBlockSpan(lastNode), createInlineSpan(createStyledNode(currentElement)));
+      //     combinedElements.add(elem);
+      //     lastSpan = null;
+      //     lastNode = null;
+      //   }else if(isInlineNode(lastNode.childAndParents)&&isInlineNode(currentElement)){
+      //     final elem = mergeChild3(createInlineSpan(lastNode), createInlineSpan(createStyledNode(currentElement)));
+      //     combinedElements.add(elem);
+      //     lastSpan = null;
+      //     lastNode = null;
+      //   }
+      // }
+      // final styledNode = createStyledNode(currentElement);
+      
+      // if(isInlineNode(currentElement)){
+      //   lastSpan = TextSpan(text: styledNode.childAndParents.child.text,style:styledNode.textStyle);
+      // }else{
+      //  
+      // }
+      
+      
+      lastId = currentElement.id;
     }
     return combinedElements;
+  }
+  static InlineSpan createInlineSpan(StyledNode styledNode){
+   return TextSpan(text: styledNode.childAndParents.child.text,style: styledNode.textStyle);
+  }
+  static InlineSpan createBlockSpan(StyledNode styledNode){
+    return TextSpan(text: "${styledNode.childAndParents.child.text}\n",style: styledNode.textStyle);
   }
   static bool isInlineNode(ChildAndParents element){
     return inlineTags.contains(element.parents.first.name.qualified);
@@ -111,6 +186,9 @@ class TextDecorator {
   }
   static InlineSpan mergeChild(StyledNode element1,StyledNode element2){
     return TextSpan(text: element1.childAndParents.child.text,style: element1.textStyle,children: [TextSpan(text: element2.childAndParents.child.text+"\n",style: element2.textStyle)]);
+  }
+  static InlineSpan mergeChild3(InlineSpan element1,InlineSpan element2){
+    return TextSpan(text: "",children: [element1,element2]);
   }
 }
 

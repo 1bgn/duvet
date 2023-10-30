@@ -30,7 +30,7 @@ class HyphenatedTextFactory {
         .expand((element) => element).toList();
     final elements = TextDecorator.combine(sections);
     // final elements = sections.map((e) => TextDecorator.fb2Decorate(e)).toList();
-    sections.take(300).forEach((element) {
+    sections.take(100).forEach((element) {
       print(element);
     });
     return HyphenatedText(
