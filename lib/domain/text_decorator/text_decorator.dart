@@ -1,12 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:projects/domain/model/child_and_parents.dart';
-import 'package:projects/domain/model/decorated_node.dart';
+import 'package:projects/domain/model/styled_element.dart';
+
 import 'package:projects/domain/model/styled_node.dart';
-import 'package:projects/test_xml/xml_tester.dart';
+
 import 'package:xml/xml.dart';
 
-import '../hyphenator/hyphenator.dart';
+
 
 class TextDecorator {
 
@@ -73,100 +74,69 @@ class TextDecorator {
 
    return StyledNode(childAndParents: childAndParents, textStyle: textStyle);
   }
+  static List<StyledElement> layoutElements(double maxWidth,List<StyledElement> elements){
+    for (var element in elements) {
+      TextPainter textPainter = TextPainter(text: element.inlineSpan,textDirection: TextDirection.ltr);
+      textPainter.layout(maxWidth: maxWidth);
+      element.styleAttributes.height+=textPainter.height;
+      element.styleAttributes.width+=textPainter.width;
+    }
+    return elements;
+  }
 
-  static List<InlineSpan> combine(List<ChildAndParents> elements){
-    // return elements.map(createStyledNode).map((e) => TextSpan(text: "${e.childAndParents.child.text}\n",style: e.textStyle)).toList();
-    List<InlineSpan> combinedElements = [];
-    List<ChildAndParents> childCombinedElements = [];
+  static List<StyledElement> combine(List<ChildAndParents> elements){
+    List<StyledElement> combinedElements = [];
 
-    int lastId = -1;
-    InlineSpan? lastSpan;
-    StyledNode? lastNode;
+
+
     ChildAndParents? lastElement;
 
     for(int i =0;i<elements.length;i++){
       var currentElement =elements[i];
       if(lastElement==null){
-        combinedElements.add(isInlineNode(currentElement)?createInlineSpan(createStyledNode(currentElement)):createBlockSpan(createStyledNode(currentElement)));
+        combinedElements.add(isInlineNode(currentElement)?createInlineElement(createStyledNode(currentElement)):createBlockElement(createStyledNode(currentElement)));
       }else{
         //lastElement != null
         if(isInlineNode(lastElement)&&isInlineNode(currentElement)){
-         combinedElements.add(createInlineSpan(createStyledNode(currentElement)));
+         combinedElements.add(createInlineElement(createStyledNode(currentElement)));
         }else if(isInlineNode(lastElement)&& !isInlineNode(currentElement)){
 
-
           if(lastElement.id==currentElement.id){
-            combinedElements.add(createInlineSpan(createStyledNode(currentElement)));
+            combinedElements.add(createInlineElement(createStyledNode(currentElement)));
           }else{
             combinedElements.removeLast();
-            combinedElements.add(createBlockSpan(createStyledNode(lastElement)));
-            combinedElements.add(createBlockSpan(createStyledNode(currentElement)));
+            combinedElements.add(createBlockElement(createStyledNode(lastElement)));
+            combinedElements.add(createBlockElement(createStyledNode(currentElement)));
 
           }
         }else if(!isInlineNode(lastElement)&& isInlineNode(currentElement)){
 
           if(lastElement.id==currentElement.id){
             combinedElements.removeLast();
-            combinedElements.add(createInlineSpan(createStyledNode(lastElement)));
-            combinedElements.add(createInlineSpan(createStyledNode(currentElement)));
+            combinedElements.add(createInlineElement(createStyledNode(lastElement)));
+            combinedElements.add(createInlineElement(createStyledNode(currentElement)));
           }else{
-            combinedElements.add(createBlockSpan(createStyledNode(currentElement)));
+            combinedElements.add(createBlockElement(createStyledNode(currentElement)));
 
           }
 
         }else if(!isInlineNode(lastElement)&& !isInlineNode(currentElement)){
 
-            combinedElements.add(createBlockSpan(createStyledNode(currentElement)));
+            combinedElements.add(createBlockElement(createStyledNode(currentElement)));
 
 
 
         }
       }
       lastElement = currentElement;
-      // if(lastNode==null ){
-      //   lastNode = createStyledNode(currentElement);
-      //   lastSpan = createInlineSpan(lastNode);
-      // }else if(lastNode !=null){
-      //   if(!isInlineNode(lastNode.childAndParents)&&!isInlineNode(currentElement)){
-      //     combinedElements.add(createBlockSpan(lastNode));
-      //     combinedElements.add(createBlockSpan(createStyledNode(currentElement)));
-      //     lastNode = null;
-      //     lastSpan = null;
-      //   }else if(isInlineNode(lastNode.childAndParents)&&!isInlineNode(currentElement)){
-      //     final elem = mergeChild3(createInlineSpan(lastNode), createBlockSpan(createStyledNode(currentElement)));
-      //     combinedElements.add(elem);
-      //     lastSpan = null;
-      //     lastNode = null;
-      //   }else if(!isInlineNode(lastNode.childAndParents)&&isInlineNode(currentElement)){
-      //     final elem = mergeChild3(createBlockSpan(lastNode), createInlineSpan(createStyledNode(currentElement)));
-      //     combinedElements.add(elem);
-      //     lastSpan = null;
-      //     lastNode = null;
-      //   }else if(isInlineNode(lastNode.childAndParents)&&isInlineNode(currentElement)){
-      //     final elem = mergeChild3(createInlineSpan(lastNode), createInlineSpan(createStyledNode(currentElement)));
-      //     combinedElements.add(elem);
-      //     lastSpan = null;
-      //     lastNode = null;
-      //   }
-      // }
-      // final styledNode = createStyledNode(currentElement);
-      
-      // if(isInlineNode(currentElement)){
-      //   lastSpan = TextSpan(text: styledNode.childAndParents.child.text,style:styledNode.textStyle);
-      // }else{
-      //  
-      // }
-      
-      
-      lastId = currentElement.id;
     }
     return combinedElements;
   }
-  static InlineSpan createInlineSpan(StyledNode styledNode){
-   return TextSpan(text: styledNode.childAndParents.child.text,style: styledNode.textStyle);
+  static StyledElement createInlineElement(StyledNode styledNode){
+   return StyledElement(isInline: true, styledNode: styledNode);
   }
-  static InlineSpan createBlockSpan(StyledNode styledNode){
-    return TextSpan(text: "${styledNode.childAndParents.child.text}\n",style: styledNode.textStyle);
+  static StyledElement createBlockElement(StyledNode styledNode){
+    return StyledElement(isInline: false, styledNode: styledNode);
   }
   static bool isInlineNode(ChildAndParents element){
     return inlineTags.contains(element.parents.first.name.qualified);
