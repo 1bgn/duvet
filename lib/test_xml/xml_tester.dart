@@ -101,16 +101,7 @@ bool isRelatives(
   return parents1.contains(parents2) || parents2.contains(parents1);
 }
 
-ChildAndParents mergeChild(ChildAndParents element1, ChildAndParents element2) {
-  return ChildAndParents(
-      id: element1.id,
-      child: XmlElement(getLineNodeName(element1, element2), [], [
-        XmlText(
-          "${element1.child.text}${element2.child.text}",
-        )
-      ]),
-      parents: element1.parents.skip(1).toList());
-}
+
 
 ChildAndParents mergeChild2(
     ChildAndParents element1, ChildAndParents element2) {

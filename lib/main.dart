@@ -45,19 +45,20 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(child: LayoutBuilder(
-        builder: (context,size) {
-          return ListView(children: [
-            FutureBuilder<ByteData>(future: rootBundle.load("assets/books/book5.fb2"), builder: (BuildContext context, AsyncSnapshot<ByteData> snapshot) {
-              if(snapshot.hasData){
-                return HyphenatedTextComponent(hyphenatedText: HyphenatedTextFactory.fromXml(maxWidth: size.maxWidth,xmlText: utf8.decode(snapshot.data!.buffer.asUint8List())),);
-              }
+      body: SafeArea(child: StatefulBuilder(builder: (BuildContext context, void Function(void Function()) setState) {
+        return LayoutBuilder(
+            builder: (context,size) {
+              return FutureBuilder<ByteData>(future: rootBundle.load("assets/books/book5.fb2"), builder: (BuildContext context, AsyncSnapshot<ByteData> snapshot) {
+                if(snapshot.hasData){
+                  print("SCREEN_SIZE:${size}");
+                  return Row(children: [Expanded(child: HyphenatedTextFactory.fromXml(maxWidth: size.maxWidth,maxHeight: size.maxHeight,xmlText: utf8.decode(snapshot.data!.buffer.asUint8List())))],);
+                }
 
-              return CircularProgressIndicator();
-            }, )
-          ],);
-        }
-      )),
+                return CircularProgressIndicator();
+              }, );
+            }
+        );
+      },)),
     );
   }
 }

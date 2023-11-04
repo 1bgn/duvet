@@ -1,164 +1,430 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:projects/domain/model/child_and_parents.dart';
+import 'package:projects/domain/model/medium_metrics.dart';
+import 'package:projects/domain/model/page_bundle.dart';
 import 'package:projects/domain/model/styled_element.dart';
 
 import 'package:projects/domain/model/styled_node.dart';
 
 import 'package:xml/xml.dart';
 
-
-
 class TextDecorator {
+  static final inlineTags = [
+    "a",
+  ];
 
-  static final inlineTags = ["a",];
-
-
-  static InlineSpan fb2Decorate(ChildAndParents childAndParents,) {
-      final xmlNode = childAndParents.child;
-
-      TextStyle textStyle = const TextStyle(inherit: true);
-      for (var element in childAndParents.parents.reversed) {
-
-       switch(element.qualifiedName){
-         case "book-title":{
-
-           textStyle.merge(TextStyle(fontWeight: FontWeight.bold));
-         }
-         case "title":{
-           textStyle = textStyle.merge(TextStyle(fontWeight: FontWeight.bold));
-         }
-         case "epigraph":{
-           textStyle = textStyle.merge(TextStyle(fontStyle: FontStyle.italic));
-
-         }
-         case "p":{
-          textStyle = textStyle.merge(TextStyle(fontSize: 14));
-         }
-         case "a":{
-           textStyle = textStyle.merge(TextStyle(color: Colors.blueAccent));
-         }
-       }
-      }
-
-      return TextSpan(text:  "${xmlNode.text}\n",style: textStyle);
-
-  }
-
-
-  static StyledNode createStyledNode(ChildAndParents childAndParents,) {
+  static InlineSpan fb2Decorate(
+    ChildAndParents childAndParents,
+  ) {
+    final xmlNode = childAndParents.child;
 
     TextStyle textStyle = const TextStyle(inherit: true);
     for (var element in childAndParents.parents.reversed) {
-
-      switch(element.qualifiedName){
-        case "book-title":{
-
-          textStyle.merge(TextStyle(fontWeight: FontWeight.bold));
-        }
-        case "title":{
-          textStyle = textStyle.merge(TextStyle(fontWeight: FontWeight.bold));
-        }
-        case "epigraph":{
-          textStyle = textStyle.merge(TextStyle(fontStyle: FontStyle.italic));
-
-        }
-        case "p":{
-          textStyle = textStyle.merge(TextStyle(fontSize: 14));
-        }
-        case "a":{
-          textStyle = textStyle.merge(TextStyle(color: Colors.blueAccent));
-        }
+      switch (element.qualifiedName) {
+        case "book-title":
+          {
+            textStyle.merge(TextStyle(fontWeight: FontWeight.bold));
+          }
+        case "title":
+          {
+            textStyle = textStyle.merge(TextStyle(fontWeight: FontWeight.bold));
+          }
+        case "epigraph":
+          {
+            textStyle = textStyle.merge(TextStyle(fontStyle: FontStyle.italic));
+          }
+        case "p":
+          {
+            textStyle = textStyle.merge(TextStyle(fontSize: 14));
+          }
+        case "a":
+          {
+            textStyle = textStyle.merge(TextStyle(color: Colors.blueAccent));
+          }
       }
     }
 
-   return StyledNode(childAndParents: childAndParents, textStyle: textStyle);
+    return TextSpan(text: "${xmlNode.text}\n", style: textStyle);
   }
-  static List<StyledElement> layoutElements(double maxWidth,List<StyledElement> elements){
+
+  static StyledNode createStyledNode(
+    ChildAndParents childAndParents,
+  ) {
+    TextStyle textStyle = const TextStyle(inherit: true);
+    TextAlign textAlign = TextAlign.left;
+    for (var element in childAndParents.parents.reversed) {
+      switch (element.qualifiedName) {
+        case "book-title":
+          {
+           textStyle = textStyle.merge(TextStyle(fontWeight: FontWeight.bold,fontSize: 14));
+          }
+        case "title":
+          {
+            textStyle = textStyle.merge(TextStyle(fontWeight: FontWeight.bold,fontSize: 14));
+          }
+        case "epigraph":
+          {
+            textStyle = textStyle.merge(TextStyle(fontStyle: FontStyle.italic));
+          }
+        case "p":
+          {
+            textAlign = TextAlign.justify;
+            textStyle = textStyle.merge(TextStyle());
+          }
+        case "a":
+          {
+            textStyle = textStyle.merge(TextStyle(color: Colors.blueAccent));
+          }
+      }
+    }
+
+    return StyledNode(childAndParents: childAndParents, textStyle: textStyle,textAlign: textAlign);
+  }
+
+  static List<StyledElement> layoutElements(
+      double maxWidth, List<StyledElement> elements) {
     for (var element in elements) {
-      TextPainter textPainter = TextPainter(text: element.inlineSpan,textDirection: TextDirection.ltr);
+      TextPainter textPainter = TextPainter(
+          text: element.inlineSpan, textDirection: TextDirection.ltr);
       textPainter.layout(maxWidth: maxWidth);
-      element.styleAttributes.height+=textPainter.height;
-      element.styleAttributes.width+=textPainter.width;
+      element.styleAttributes.height += textPainter.height;
+      element.styleAttributes.width += textPainter.width;
     }
     return elements;
   }
+  static MediumMetrics mediumMetrics( double maxWidth, double maxHeight, List<StyledElement> elements){
+    int testPages = 5;
+    PageBundle? pageBundle ;
+    int lines = 0;
+    int words = 0;
+    for (int i = 0;i<testPages;i++){
+      pageBundle = getNextPageBundle(maxWidth, maxHeight, elements);
+      lines += pageBundle.lines;
+      words += pageBundle.currentElements.map((e) => e.text.split(" ").length).fold(0, (previousValue, element) => previousValue+element);
+      elements = skipElement(pageBundle.rightPartOfElement?.styledNode.childAndParents.id??pageBundle.currentElements.last.styledNode.childAndParents.id, elements);
+    }
+    words = (words/testPages).truncate();
 
-  static List<StyledElement> combine(List<ChildAndParents> elements){
+    return MediumMetrics(words: words,linesOnPage: (lines/testPages).truncate(), pages: (elements.map((e) => e.text.split(" ").length).fold(0, (previousValue, element) => previousValue+element)/words).truncate());
+  }
+
+  static List<InlineSpan> getPage(
+      double maxWidth, double maxHeight, List<StyledElement> elements) {
+    List<InlineSpan> spans = [];
+    for (var element in elements) {
+      TextPainter textPainter = TextPainter(
+
+          text: TextSpan(children: spans.map((e) => e).toList()),
+          textDirection: TextDirection.ltr);
+      textPainter.layout(maxWidth: maxWidth,);
+
+      if (textPainter.height > maxHeight) {
+        final removedElement = spans.removeLast();
+        TextPainter removedTextPainter =
+            TextPainter(text: removedElement, textDirection: TextDirection.ltr);
+        removedTextPainter.layout(maxWidth: maxWidth);
+        final lines = removedTextPainter.computeLineMetrics();
+
+        final freeHeight =
+            maxHeight - (textPainter.height - removedTextPainter.height);
+
+        final freeLines =
+            (freeHeight / removedTextPainter.preferredLineHeight).truncate();
+
+        final charPos = removedTextPainter
+            .getPositionForOffset(
+                Offset(maxWidth, lines[freeLines].height * freeLines - 1))
+            .offset;
+        // print(
+        //     "res  $freeLines ${removedElement.toPlainText().substring(0, charPos)}");
+        spans.add(TextSpan(
+            text: removedElement.toPlainText().substring(0, charPos),
+            style: removedElement.style));
+        break;
+      } else if (textPainter.height == maxHeight) {
+        break;
+      }
+      spans.add(element.inlineSpan);
+    }
+    return spans;
+  }
+  static List<StyledElement>  skipElement(int elementId, List<StyledElement> elements){
+    print("skipElement()");
+
+    final indexWhere = elements.indexWhere((element) => element.styledNode.childAndParents.id==elementId)+1;
+    return elements.skip(indexWhere).toList();
+  }
+  static List<StyledElement>  takeElement(int elementId, List<StyledElement> elements){
+    final indexWhere = elements.indexWhere((element) => element.styledNode.childAndParents.id==elementId)-1;
+
+    final res = elements.sublist(0,indexWhere);
+    print("takeElement($indexWhere)=> ${res.first}");
+    print("($indexWhere)=> ${res.last}");
+    return res;
+  }
+
+  static PageBundle getNextPageBundle(
+      double maxWidth, double maxHeight, List<StyledElement> elements) {
+    List<StyledElement> spans = [];
+    // elements = elements.skip(40).toList();
+    int removedLines = 0;
+    List<StyledElement>? leftAndRightParts;
+    TextPainter? textPainter ;
+    for (var element in elements) {
+       textPainter = TextPainter(
+          text: TextSpan(children: spans.map((e) => e.inlineSpan).toList()),
+          textDirection: TextDirection.ltr);
+      textPainter.layout(maxWidth: maxWidth);
+      if (textPainter.height > maxHeight) {
+        final removedElement = spans.removeLast();
+        TextPainter removedTextPainter = TextPainter(
+            text: removedElement.inlineSpan, textDirection: TextDirection.ltr);
+        removedTextPainter.layout(maxWidth: maxWidth);
+        final lines = removedTextPainter.computeLineMetrics();
+        final freeHeight =
+            maxHeight - (textPainter.height - removedTextPainter.height);
+
+        final freeLines =
+            (freeHeight / removedTextPainter.preferredLineHeight).truncate();
+        removedLines = lines.length-freeLines;
+
+        final charPos = removedTextPainter
+            .getPositionForOffset(
+                Offset(maxWidth, lines[freeLines].height * freeLines - 1))
+            .offset;
+        print("res  $freeLines ${removedElement.text.substring(0, charPos)}");
+        leftAndRightParts = splitToLeftAndRight(charPos,removedElement);
+        spans.add(leftAndRightParts[0]);
+
+
+
+        break;
+      } else if (textPainter.height == maxHeight) {
+        break;
+      }
+
+      spans.add(element);
+    }
+    final bundle = PageBundle(currentElements: spans, leftPartOfElement:leftAndRightParts?[0] ,rightPartOfElement: leftAndRightParts?[1],lines: textPainter!.computeLineMetrics().length-removedLines);
+    return bundle;
+  }
+  static PageBundle getPreviousPageBundle(
+      double maxWidth, double maxHeight, List<StyledElement> elements) {
+    List<StyledElement> spans = [];
+    int lns = 0;
+
+    List<StyledElement>? leftAndRightParts;
+    print("LAST ${elements.last}");
+    TextPainter? textPainter;
+    for (var element in elements.reversed) {
+       textPainter = TextPainter(
+          text: TextSpan(children: spans.map((e) => e.inlineSpan).toList()),
+          textDirection: TextDirection.ltr);
+      textPainter.layout(maxWidth: maxWidth);
+      if (textPainter.height > maxHeight) {
+        final removedElement = spans.removeLast();
+        TextPainter removedTextPainter = TextPainter(
+            text: removedElement.inlineSpan, textDirection: TextDirection.ltr);
+        removedTextPainter.layout(maxWidth: maxWidth);
+        final lines = removedTextPainter.computeLineMetrics();
+
+        final freeHeight =
+            maxHeight - (textPainter.height - removedTextPainter.height);
+
+        final freeLines =
+        (freeHeight / removedTextPainter.preferredLineHeight).truncate();
+        lns += freeLines;
+
+        final charPos = removedTextPainter
+            .getPositionForOffset(
+            Offset(maxWidth, lines[freeLines].height * freeLines - 1))
+            .offset;
+        print("res  $freeLines ${removedElement.text.substring(0, charPos)}");
+         leftAndRightParts = splitToLeftAndRight(charPos,removedElement);
+        spans.add(leftAndRightParts[0]);
+        // spans.add(leftAndRightParts[1]);
+
+
+        break;
+      } else if (textPainter.height == maxHeight) {
+        print("=====");
+        break;
+      }
+      lns += textPainter.computeLineMetrics().length;
+      spans.add(element);
+    }
+    final bundle = PageBundle(currentElements: spans.reversed.toList(), leftPartOfElement: leftAndRightParts?[0],rightPartOfElement: leftAndRightParts?[1],lines: textPainter!.computeLineMetrics().length);
+    return bundle;
+  }
+
+  static List<StyledElement> splitToLeftAndRight(
+      int offset, StyledElement styledElement) {
+    final leftText = styledElement.text.substring(0, offset);
+    final rightText = styledElement.text.substring(offset);
+    final leftStyledElement = StyledElement(
+        isInline: styledElement.isInline,
+        styledNode: StyledNode(
+          textAlign: styledElement.styledNode.textAlign,
+            childAndParents: ChildAndParents(
+                id: styledElement.styledNode.childAndParents.id,
+                child: XmlElement(getLineNodeName(styledElement.styledNode.childAndParents), [], [
+                  XmlText(
+                    leftText,
+                  )
+                ]),
+                parents: styledElement.styledNode.childAndParents.parents),
+            textStyle: styledElement.styledNode.textStyle));
+    final rightStyledElement = StyledElement(
+        isInline: styledElement.isInline,
+        styledNode: StyledNode(
+            textAlign: styledElement.styledNode.textAlign,
+            childAndParents: ChildAndParents(
+                id: styledElement.styledNode.childAndParents.id,
+                child: XmlElement(getLineNodeName(styledElement.styledNode.childAndParents), [], [
+                  XmlText(
+                    rightText,
+                  )
+                ]),
+                parents: styledElement.styledNode.childAndParents.parents),
+            textStyle: styledElement.styledNode.textStyle));
+    return [leftStyledElement,rightStyledElement];
+  }
+
+  static double _lineWidth(List<StyledElement> line) {
+    double width = 0;
+    for (var element in line) {
+      width += element.styleAttributes.width;
+    }
+
+    return width;
+  }
+
+  static double _lineHeight(List<StyledElement> line) {
+    double height = -1;
+    for (var element in line) {
+      if (height < element.styleAttributes.height) {
+        height = element.styleAttributes.height;
+      }
+    }
+    return height;
+  }
+
+  static List<List<StyledElement>> linizer(
+      double maxWidth, List<StyledElement> elements) {
+    List<List<StyledElement>> lines = [];
+    List<StyledElement> line = [];
+    double lineWidth = 0;
+    for (var element in elements) {
+      lineWidth += element.styleAttributes.width;
+
+      if (lineWidth > maxWidth) {
+        line.add(element);
+        lines.add(line);
+        line = [];
+        lineWidth = 0;
+      } else {
+        line.add(element);
+      }
+    }
+    return lines;
+  }
+
+  static List<List<List<StyledElement>>> paginator(
+      double maxWidth, double maxHeight, List<List<StyledElement>> lines) {
+    List<List<List<StyledElement>>> pages = [];
+    List<List<StyledElement>> page = [];
+    double linesHeight = 0;
+    for (var element in lines) {
+      // print("BBBB ${element.length}");
+
+      linesHeight += _lineHeight(element);
+
+      if (linesHeight < maxHeight - linesHeight) {
+        page.add(element);
+      } else {
+        page.add(element);
+        pages.add(page);
+        page = [];
+        linesHeight = 0;
+      }
+    }
+    return pages;
+  }
+
+  static List<List<StyledElement>> normalizer(
+      List<List<List<StyledElement>>> elements) {
+    return elements.expand((element) => element).toList();
+  }
+
+  static List<StyledElement> combine(List<ChildAndParents> elements) {
     List<StyledElement> combinedElements = [];
-
-
 
     ChildAndParents? lastElement;
 
-    for(int i =0;i<elements.length;i++){
-      var currentElement =elements[i];
-      if(lastElement==null){
-        combinedElements.add(isInlineNode(currentElement)?createInlineElement(createStyledNode(currentElement)):createBlockElement(createStyledNode(currentElement)));
-      }else{
+    for (int i = 0; i < elements.length; i++) {
+      var currentElement = elements[i];
+      if (lastElement == null) {
+        combinedElements.add(isInlineNode(currentElement)
+            ? createInlineElement(createStyledNode(currentElement))
+            : createBlockElement(createStyledNode(currentElement)));
+      } else {
         //lastElement != null
-        if(isInlineNode(lastElement)&&isInlineNode(currentElement)){
-         combinedElements.add(createInlineElement(createStyledNode(currentElement)));
-        }else if(isInlineNode(lastElement)&& !isInlineNode(currentElement)){
-
-          if(lastElement.id==currentElement.id){
-            combinedElements.add(createInlineElement(createStyledNode(currentElement)));
-          }else{
+        if (isInlineNode(lastElement) && isInlineNode(currentElement)) {
+          combinedElements
+              .add(createInlineElement(createStyledNode(currentElement)));
+        } else if (isInlineNode(lastElement) && !isInlineNode(currentElement)) {
+          if (lastElement.id == currentElement.id) {
+            combinedElements
+                .add(createInlineElement(createStyledNode(currentElement)));
+          } else {
             combinedElements.removeLast();
-            combinedElements.add(createBlockElement(createStyledNode(lastElement)));
-            combinedElements.add(createBlockElement(createStyledNode(currentElement)));
-
+            combinedElements
+                .add(createBlockElement(createStyledNode(lastElement)));
+            combinedElements
+                .add(createBlockElement(createStyledNode(currentElement)));
           }
-        }else if(!isInlineNode(lastElement)&& isInlineNode(currentElement)){
-
-          if(lastElement.id==currentElement.id){
+        } else if (!isInlineNode(lastElement) && isInlineNode(currentElement)) {
+          if (lastElement.id == currentElement.id) {
             combinedElements.removeLast();
-            combinedElements.add(createInlineElement(createStyledNode(lastElement)));
-            combinedElements.add(createInlineElement(createStyledNode(currentElement)));
-          }else{
-            combinedElements.add(createBlockElement(createStyledNode(currentElement)));
-
+            combinedElements
+                .add(createInlineElement(createStyledNode(lastElement)));
+            combinedElements
+                .add(createInlineElement(createStyledNode(currentElement)));
+          } else {
+            combinedElements
+                .add(createBlockElement(createStyledNode(currentElement)));
           }
-
-        }else if(!isInlineNode(lastElement)&& !isInlineNode(currentElement)){
-
-            combinedElements.add(createBlockElement(createStyledNode(currentElement)));
-
-
-
+        } else if (!isInlineNode(lastElement) &&
+            !isInlineNode(currentElement)) {
+          combinedElements
+              .add(createBlockElement(createStyledNode(currentElement)));
         }
       }
       lastElement = currentElement;
     }
     return combinedElements;
   }
-  static StyledElement createInlineElement(StyledNode styledNode){
-   return StyledElement(isInline: true, styledNode: styledNode);
+
+  static StyledElement createInlineElement(StyledNode styledNode) {
+    return StyledElement(isInline: true, styledNode: styledNode);
   }
-  static StyledElement createBlockElement(StyledNode styledNode){
+
+  static StyledElement createBlockElement(StyledNode styledNode) {
     return StyledElement(isInline: false, styledNode: styledNode);
   }
-  static bool isInlineNode(ChildAndParents element){
+
+  static bool isInlineNode(ChildAndParents element) {
     return inlineTags.contains(element.parents.first.name.qualified);
   }
-  static XmlName getLineNodeName(ChildAndParents element1,ChildAndParents element2){
-    return XmlName(isInlineNode(element1)?element2.parents.first.name.qualified:element1.parents.first.name.qualified);
-  }
-  static bool isNeedCombine(ChildAndParents  element1,ChildAndParents element2){
 
-    return isInlineNode(element1) || isInlineNode(element2);
+  static XmlName getLineNodeName(
+      ChildAndParents element1) {
+    return XmlName(element1.parents.first.name.qualified);
   }
 
-  static bool isRelatives(ChildAndParents element1,ChildAndParents element2, ){
-    final parents1 = element1.parents.skip(1).map((e) => e.qualifiedName).join();
-    final parents2 = element2.parents.skip(1).map((e) => e.qualifiedName).join();
-    return parents1.contains(parents2) || parents2.contains(parents1);
-  }
-  static InlineSpan mergeChild(StyledNode element1,StyledNode element2){
-    return TextSpan(text: element1.childAndParents.child.text,style: element1.textStyle,children: [TextSpan(text: element2.childAndParents.child.text+"\n",style: element2.textStyle)]);
-  }
-  static InlineSpan mergeChild3(InlineSpan element1,InlineSpan element2){
-    return TextSpan(text: "",children: [element1,element2]);
-  }
+
+
+
+
 }
-
