@@ -3,8 +3,12 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:projects/domain/factories/hyphenated_text_factory.dart';
+import 'package:projects/domain/model/book_data.dart';
 import 'package:projects/domain/text_decorator/text_decorator.dart';
 import 'package:projects/presentation/component/hyphenated_text_component.dart';
+import 'package:projects/presentation/component/pager.dart';
+
+import 'domain/model/styled_element.dart';
 
 void main() {
   runApp(const MyApp());
@@ -40,7 +44,22 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  bool bookIsLoaded  = false;
+  late final List<StyledElement> _elements;
+  late final int wordsInBook;
 
+  @override
+  void initState() {
+    rootBundle.load("assets/books/book5.fb2").then((value) {
+      _elements = HyphenatedTextFactory.elementsFromXml(xmlText: utf8.decode(value.buffer.asUint8List()));
+      wordsInBook =  (_elements.map((e) => e.text.split(" ").length).fold(0, (previousValue, element) => previousValue+element));
+      setState(() {
+        bookIsLoaded = true;
+
+      });
+    });
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,14 +67,14 @@ class _MyHomePageState extends State<MyHomePage> {
       body: SafeArea(child: StatefulBuilder(builder: (BuildContext context, void Function(void Function()) setState) {
         return LayoutBuilder(
             builder: (context,size) {
-              return FutureBuilder<ByteData>(future: rootBundle.load("assets/books/book5.fb2"), builder: (BuildContext context, AsyncSnapshot<ByteData> snapshot) {
-                if(snapshot.hasData){
-                  print("SCREEN_SIZE:${size}");
-                  return Row(children: [Expanded(child: HyphenatedTextFactory.fromXml(maxWidth: size.maxWidth,maxHeight: size.maxHeight,xmlText: utf8.decode(snapshot.data!.buffer.asUint8List())))],);
-                }
 
-                return CircularProgressIndicator();
-              }, );
+              if(bookIsLoaded){
+                return Row(children: [
+                  Expanded(child: Pager(bookData: BookData(countWordsInBook: wordsInBook,elements: _elements,size: size,),))
+                ],);
+              }else{
+return CircularProgressIndicator();
+              }
             }
         );
       },)),

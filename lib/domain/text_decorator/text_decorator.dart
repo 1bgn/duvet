@@ -93,7 +93,7 @@ class TextDecorator {
     }
     return elements;
   }
-  static MediumMetrics mediumMetrics( double maxWidth, double maxHeight, List<StyledElement> elements){
+  static MediumMetrics mediumMetrics(int countWordsInBook, double maxWidth, double maxHeight, List<StyledElement> elements){
     int testPages = 5;
     PageBundle? pageBundle ;
     int lines = 0;
@@ -106,7 +106,7 @@ class TextDecorator {
     }
     words = (words/testPages).truncate();
 
-    return MediumMetrics(words: words,linesOnPage: (lines/testPages).truncate(), pages: (elements.map((e) => e.text.split(" ").length).fold(0, (previousValue, element) => previousValue+element)/words).truncate());
+    return MediumMetrics(words: words,linesOnPage: (lines/testPages).truncate(), pages: (countWordsInBook/words).truncate());
   }
 
   static List<InlineSpan> getPage(
@@ -150,17 +150,17 @@ class TextDecorator {
     return spans;
   }
   static List<StyledElement>  skipElement(int elementId, List<StyledElement> elements){
-    print("skipElement()");
+    // print("skipElement()");
 
     final indexWhere = elements.indexWhere((element) => element.styledNode.childAndParents.id==elementId)+1;
     return elements.skip(indexWhere).toList();
   }
   static List<StyledElement>  takeElement(int elementId, List<StyledElement> elements){
-    final indexWhere = elements.indexWhere((element) => element.styledNode.childAndParents.id==elementId)-1;
+    final indexWhere = elements.indexWhere((element) => element.styledNode.childAndParents.id==elementId);
 
     final res = elements.sublist(0,indexWhere);
-    print("takeElement($indexWhere)=> ${res.first}");
-    print("($indexWhere)=> ${res.last}");
+    // print("takeElement($indexWhere)=> ${res.first}");
+    // print("($indexWhere)=> ${res.last}");
     return res;
   }
 
@@ -193,7 +193,7 @@ class TextDecorator {
             .getPositionForOffset(
                 Offset(maxWidth, lines[freeLines].height * freeLines - 1))
             .offset;
-        print("res  $freeLines ${removedElement.text.substring(0, charPos)}");
+        // print("res  $freeLines ${removedElement.text.substring(0, charPos)}");
         leftAndRightParts = splitToLeftAndRight(charPos,removedElement);
         spans.add(leftAndRightParts[0]);
 
@@ -215,8 +215,9 @@ class TextDecorator {
     int lns = 0;
 
     List<StyledElement>? leftAndRightParts;
-    print("LAST ${elements.last}");
     TextPainter? textPainter;
+
+
     for (var element in elements.reversed) {
        textPainter = TextPainter(
           text: TextSpan(children: spans.map((e) => e.inlineSpan).toList()),
@@ -224,6 +225,7 @@ class TextDecorator {
       textPainter.layout(maxWidth: maxWidth);
       if (textPainter.height > maxHeight) {
         final removedElement = spans.removeLast();
+
         TextPainter removedTextPainter = TextPainter(
             text: removedElement.inlineSpan, textDirection: TextDirection.ltr);
         removedTextPainter.layout(maxWidth: maxWidth);
@@ -231,21 +233,21 @@ class TextDecorator {
 
         final freeHeight =
             maxHeight - (textPainter.height - removedTextPainter.height);
-
+        print(freeHeight);
+        print(removedTextPainter.preferredLineHeight);
         final freeLines =
         (freeHeight / removedTextPainter.preferredLineHeight).truncate();
         lns += freeLines;
 
         final charPos = removedTextPainter
             .getPositionForOffset(
-            Offset(maxWidth, lines[freeLines].height * freeLines - 1))
+            Offset(0, removedTextPainter.preferredLineHeight * freeLines-1))
             .offset;
-        print("res  $freeLines ${removedElement.text.substring(0, charPos)}");
-         leftAndRightParts = splitToLeftAndRight(charPos,removedElement);
-        spans.add(leftAndRightParts[0]);
-        // spans.add(leftAndRightParts[1]);
+        print("res ${lines.length} $freeLines  ${removedElement.text.substring(charPos)}");
+        print("res  $freeLines ${spans.last.text} ");
 
-
+        leftAndRightParts = splitToLeftAndRight(charPos,removedElement);
+        spans.add(leftAndRightParts[1]);
         break;
       } else if (textPainter.height == maxHeight) {
         print("=====");
@@ -254,14 +256,22 @@ class TextDecorator {
       lns += textPainter.computeLineMetrics().length;
       spans.add(element);
     }
-    final bundle = PageBundle(currentElements: spans.reversed.toList(), leftPartOfElement: leftAndRightParts?[0],rightPartOfElement: leftAndRightParts?[1],lines: textPainter!.computeLineMetrics().length);
+    // if (textPainter!.height < maxHeight) {
+    //
+    //   // spans.add(leftAndRightParts[1]);
+    //
+    //
+    //
+    // }
+    final bundle = PageBundle(currentElements: spans.reversed.toList(), leftPartOfElement: leftAndRightParts?[1],rightPartOfElement: leftAndRightParts?[0],lines: textPainter!.computeLineMetrics().length);
     return bundle;
   }
 
   static List<StyledElement> splitToLeftAndRight(
       int offset, StyledElement styledElement) {
     final leftText = styledElement.text.substring(0, offset);
-    final rightText = styledElement.text.substring(offset);
+    final rightText = styledElement.text.substring(offset).replaceAll("\n", "");
+    
     final leftStyledElement = StyledElement(
         isInline: styledElement.isInline,
         styledNode: StyledNode(
@@ -276,7 +286,7 @@ class TextDecorator {
                 parents: styledElement.styledNode.childAndParents.parents),
             textStyle: styledElement.styledNode.textStyle));
     final rightStyledElement = StyledElement(
-        isInline: styledElement.isInline,
+        isInline:  styledElement.isInline,
         styledNode: StyledNode(
             textAlign: styledElement.styledNode.textAlign,
             childAndParents: ChildAndParents(

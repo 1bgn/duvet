@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:projects/domain/hyphenator/hyphenator.dart';
 import 'package:projects/domain/model/style_attributes.dart';
 import 'package:projects/domain/model/styled_node.dart';
@@ -18,7 +19,8 @@ class StyledElement{
   StyledElement({required this.isInline, required this.styledNode});
 
   String get text {
-   _text ??=  _hyphenator.hyphenate(styledNode.childAndParents.child.text);
+   // _text ??=  _hyphenator.hyphenate(styledNode.childAndParents.child.text);
+   _text ??= styledNode.childAndParents.child.text;
     return _text!;
   }
 

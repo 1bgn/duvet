@@ -9,6 +9,7 @@ class PageBundle{
    final StyledElement? leftPartOfElement;
    final StyledElement? rightPartOfElement;
    final int lines;
+   PageBundle? prevBundle;
 
   @override
   String toString() {

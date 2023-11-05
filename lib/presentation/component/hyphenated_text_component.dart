@@ -2,6 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:projects/domain/hyphenator/hyphenator.dart';
 import 'package:projects/domain/model/hyphenated_text.dart';
 
+import '../../domain/model/styled_element.dart';
+
 class HyphenatedTextComponent extends StatefulWidget{
   final HyphenatedText hyphenatedText;
 
@@ -12,7 +14,6 @@ class HyphenatedTextComponent extends StatefulWidget{
 }
 
 class _HyphenatedTextComponentState extends State<HyphenatedTextComponent> {
-
 
 
   @override

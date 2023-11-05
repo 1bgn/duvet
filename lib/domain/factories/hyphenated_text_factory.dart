@@ -18,7 +18,31 @@ class HyphenatedTextFactory {
   static PageController pageController = PageController(initialPage: 1);
   static int lastPage = -1;
   static List<PageBundle> pages = [];
-  static Widget fromXml(
+  static List<StyledElement> elementsFromXml(
+      {
+        String xmlText = '''<?xml version="1.0"?>
+    <bookshelf>
+      <book>
+        <title lang="en">Growing a Language</title>
+        <price>29.99</price>
+      </book>
+      <book>
+        <title lang="en">Learning XML</title>
+        <price>39.95</price>
+      </book>
+      <price>132.00</price>
+    </bookshelf>'''}) {
+
+      final document = XmlDocument.parse(xmlText);
+      final sections = document
+          .findAllElements("body")
+          .map((e) => XmlDecoder.decodeXml(e))
+          .expand((element) => element)
+          .toList();
+     return  TextDecorator.combine(sections);
+
+  }
+  static Widget widgetFromXml(
       {required double maxWidth,
       required double maxHeight,
       String xmlText = '''<?xml version="1.0"?>
@@ -44,7 +68,7 @@ class HyphenatedTextFactory {
     }
     // final elements = sections.map((e) => TextDecorator.fb2Decorate(e)).toList();
 
-    print("MEDIUM LINES: ${TextDecorator.mediumMetrics(maxWidth, maxHeight, elements)}");
+    // print("MEDIUM LINES: ${TextDecorator.mediumMetrics(maxWidth, maxHeight, elements)}");
     return PageView.builder(
       controller: pageController,
       onPageChanged: (int index){
