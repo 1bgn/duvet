@@ -23,7 +23,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-
+        textSelectionTheme: TextSelectionThemeData(),
+        textTheme: TextTheme(),
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
@@ -52,6 +53,15 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     rootBundle.load("assets/books/book5.fb2").then((value) {
       _elements = HyphenatedTextFactory.elementsFromXml(xmlText: utf8.decode(value.buffer.asUint8List()));
+      int index = 0;
+      for (var element in _elements) {
+        element.index = index;
+        index += element.text.length;
+      }
+      // for (var element in _elements) {
+      //   if(element.index<1200)
+      //  print("ELEMENT: $element");
+      // }
       wordsInBook =  (_elements.map((e) => e.text.split(" ").length).fold(0, (previousValue, element) => previousValue+element));
       setState(() {
         bookIsLoaded = true;

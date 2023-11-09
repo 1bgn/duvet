@@ -10,13 +10,16 @@ class StyledElement{
   final styleAttributes =StyleAttributes();
   InlineSpan? _inlineSpan;
   static final _hyphenator =  Hyphenator();
+  int index = 0;
+  final bool isSplitted;
+
   String? _text;
   @override
   String toString() {
-    return 'StyledElement{_inlineSpan: $_inlineSpan}';
+    return 'StyledElement{index: $index, text: $text,}';
   }
 
-  StyledElement({required this.isInline, required this.styledNode});
+  StyledElement({required this.isInline, required this.styledNode,this.isSplitted=false});
 
   String get text {
    // _text ??=  _hyphenator.hyphenate(styledNode.childAndParents.child.text);
