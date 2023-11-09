@@ -72,10 +72,13 @@ class _PagerState extends State<Pager> {
           // }
 
           currentPage = TextDecorator.getNextPageBundle(bookData.size.maxWidth,bookData.size. maxHeight, nextElements);
+          print("currentPage!.currentElements $globalIndex ${currentPage!.currentElements.first} ${currentPage!.currentElements.last}");
+
           if(currentPage?.rightPartOfElement!=null){
             // print("LAST nnextElements ${currentPage?.rightPartOfElement}");
 
             TextDecorator.insertFragment(currentPage!.leftPartOfElement!,currentPage!.rightPartOfElement!, bookData.elements);
+            print("currentPage!.rightPartOfElement! ${currentPage!.rightPartOfElement!}");
 
           }
 
@@ -87,10 +90,10 @@ class _PagerState extends State<Pager> {
           globalIndex = currentPage!.topElement.index;
           final previousElements = TextDecorator.takeElementTo(globalIndex, bookData.elements);
           // print('previousElementst: ${previousElements.first} ${previousElements.last}');
-          print("getPreviousPageBundle $globalIndex ${previousElements.first} ${previousElements.last}");
+          print("getPreviousPageBundle $globalIndex ${previousElements.first} ${previousElements[previousElements.length-2]}");
 
           for (var element in  bookData.elements) {
-            if(element.index<5352)
+            if(element.index<=5352)
               print("ELEMENT: $element");
           }
           // print('firstElement: ${previousElements.first.text}');

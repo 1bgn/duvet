@@ -58,10 +58,10 @@ class _MyHomePageState extends State<MyHomePage> {
         element.index = index;
         index += element.text.length;
       }
-      // for (var element in _elements) {
-      //   if(element.index<1200)
-      //  print("ELEMENT: $element");
-      // }
+      for (var element in _elements) {
+        if(element.text=="\n")
+       print("ELEMENT: $element");
+      }
       wordsInBook =  (_elements.map((e) => e.text.split(" ").length).fold(0, (previousValue, element) => previousValue+element));
       setState(() {
         bookIsLoaded = true;

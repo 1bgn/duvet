@@ -206,18 +206,32 @@ class TextDecorator {
         final lines = removedTextPainter.computeLineMetrics();
         final freeHeight =
             maxHeight - (textPainter.height - removedTextPainter.height);
-
+        double lineHeight = -1;
+        for (var element in lines) {
+          if(element.height>lineHeight){
+            lineHeight = element.height;
+          }
+        }
         final freeLines =
-            (freeHeight / removedTextPainter.preferredLineHeight).truncate();
+            (freeHeight / lineHeight).truncate();
         removedLines = lines.length-freeLines;
 
         final charPos = removedTextPainter
             .getPositionForOffset(
-                Offset(maxWidth, lines[freeLines].height * freeLines - 1))
+                Offset(maxWidth, lineHeight * freeLines - 1))
             .offset;
-        // print("res  $freeLines ${removedElement.text.substring(0, charPos)}");
+        print("FREE LINES: $freeLines ${removedElement.isInline} ${removedElement.text}");
+        // if(charPos!=removedElement.text.length){
+        //   leftAndRightParts = splitToLeftAndRight(charPos,removedElement);
+        //   spans.add(leftAndRightParts[0]);
+        // }else{
+        //   spans.add(removedElement);
+        // }
+
         leftAndRightParts = splitToLeftAndRight(charPos,removedElement);
         spans.add(leftAndRightParts[0]);
+        // print("res  $freeLines ${removedElement.text.substring(0, charPos)}");
+
 
 
 
@@ -242,13 +256,14 @@ class TextDecorator {
 
     for (var element in elements.reversed) {
        textPainter = TextPainter(
-          text: TextSpan(children: spans.map((e) => e.inlineSpan).toList()),
+          text: TextSpan(children: spans.reversed.map((e) => e.inlineSpan).toList()),
           textDirection: TextDirection.ltr);
       textPainter.layout(maxWidth: maxWidth);
       if (textPainter.height > maxHeight ) {
 
         final removedElement = spans.removeLast();
-        print("REMOVED ${removedElement}");
+        print("REMOVED1 ${textPainter.text!.toPlainText()} ${textPainter.height} $maxHeight");
+        print("REMOVED2 ${textPainter.height} $maxHeight");
 
           if(removedElement.isSplitted){
             spans.add(removedElement);
@@ -263,8 +278,14 @@ class TextDecorator {
                 maxHeight - (textPainter.height - removedTextPainter.height);
             print(freeHeight);
             print(removedTextPainter.preferredLineHeight);
+            double lineHeight = -1;
+            for (var element in lines) {
+              if(element.height>lineHeight){
+                lineHeight = element.height;
+              }
+            }
             final freeLines =
-            (freeHeight / removedTextPainter.preferredLineHeight).truncate();
+            (freeHeight / lineHeight).truncate();
             lns += freeLines;
 
             if(removedElement.isSplitted){
@@ -302,8 +323,8 @@ class TextDecorator {
   static List<StyledElement> splitToLeftAndRight(
       int offset, StyledElement styledElement) {
     final leftText = styledElement.text.substring(0, offset);
-    final rightText = styledElement.text.substring(offset).replaceAll("\n", "");
-    
+    final rightText = styledElement.text.substring(offset);
+    // print("RIGHTTEXT ${rightText.isEmpty}");
     final leftStyledElement = StyledElement(
       isSplitted: true,
         isInline: styledElement.isInline,
@@ -321,7 +342,7 @@ class TextDecorator {
     leftStyledElement.index = styledElement.index ;
     final rightStyledElement = StyledElement(
         isSplitted: true,
-        isInline:  styledElement.isInline,
+        isInline:  styledElement.isInline || rightText.isEmpty,
         styledNode: StyledNode(
             textAlign: styledElement.styledNode.textAlign,
             childAndParents: ChildAndParents(
@@ -333,6 +354,7 @@ class TextDecorator {
                 ]),
                 parents: styledElement.styledNode.childAndParents.parents),
             textStyle: styledElement.styledNode.textStyle));
+
     rightStyledElement.index =  styledElement.index+offset ;
     return [leftStyledElement,rightStyledElement];
   }

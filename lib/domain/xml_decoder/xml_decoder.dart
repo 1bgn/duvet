@@ -7,7 +7,7 @@ import '../model/child_and_parents.dart';
 class XmlDecoder{
   static final inlineTags = ["a",];
   static List<ChildAndParents> decodeXml(XmlNode xmlElement,{int? ID}){
-    final descendants = xmlElement.children.where((element) => element.text.trim().isNotEmpty);
+    final descendants = xmlElement.children.where((element) => element.text.trim().isNotEmpty) ;
     List<ChildAndParents> elements = [];
     // print(descendants);
     int id =ID?? Random().nextInt(10000000);
