@@ -93,6 +93,55 @@ class TextDecorator {
     }
     return elements;
   }
+  static List<StyledElement> combine(List<ChildAndParents> elements) {
+    List<StyledElement> combinedElements = [];
+
+    ChildAndParents? lastElement;
+
+    for (int i = 0; i < elements.length; i++) {
+      var currentElement = elements[i];
+      if (lastElement == null) {
+        combinedElements.add(isInlineNode(currentElement)
+            ? createInlineElement(createStyledNode(currentElement))
+            : createBlockElement(createStyledNode(currentElement)));
+      } else {
+        //lastElement != null
+        if (isInlineNode(lastElement) && isInlineNode(currentElement)) {
+          combinedElements
+              .add(createInlineElement(createStyledNode(currentElement)));
+        } else if (isInlineNode(lastElement) && !isInlineNode(currentElement)) {
+          //упростить
+          if (lastElement.id == currentElement.id) {
+            combinedElements
+                .add(createBlockElement(createStyledNode(currentElement)));
+          } else {
+            combinedElements.removeLast();
+            combinedElements
+                .add(createBlockElement(createStyledNode(lastElement)));
+            combinedElements
+                .add(createBlockElement(createStyledNode(currentElement)));
+          }
+        } else if (!isInlineNode(lastElement) && isInlineNode(currentElement)) {
+          if (lastElement.id == currentElement.id) {
+            combinedElements.removeLast();
+            combinedElements
+                .add(createInlineElement(createStyledNode(lastElement)));
+            combinedElements
+                .add(createInlineElement(createStyledNode(currentElement)));
+          } else {
+            combinedElements
+                .add(createBlockElement(createStyledNode(currentElement)));
+          }
+        } else if (!isInlineNode(lastElement) &&
+            !isInlineNode(currentElement)) {
+          combinedElements
+              .add(createBlockElement(createStyledNode(currentElement)));
+        }
+      }
+      lastElement = currentElement;
+    }
+    return combinedElements;
+  }
   static MediumMetrics mediumMetrics(int countWordsInBook, double maxWidth, double maxHeight, List<StyledElement> elements){
     int testPages = 5;
     PageBundle? pageBundle ;
@@ -425,54 +474,7 @@ class TextDecorator {
     return elements.expand((element) => element).toList();
   }
 
-  static List<StyledElement> combine(List<ChildAndParents> elements) {
-    List<StyledElement> combinedElements = [];
 
-    ChildAndParents? lastElement;
-
-    for (int i = 0; i < elements.length; i++) {
-      var currentElement = elements[i];
-      if (lastElement == null) {
-        combinedElements.add(isInlineNode(currentElement)
-            ? createInlineElement(createStyledNode(currentElement))
-            : createBlockElement(createStyledNode(currentElement)));
-      } else {
-        //lastElement != null
-        if (isInlineNode(lastElement) && isInlineNode(currentElement)) {
-          combinedElements
-              .add(createInlineElement(createStyledNode(currentElement)));
-        } else if (isInlineNode(lastElement) && !isInlineNode(currentElement)) {
-          if (lastElement.id == currentElement.id) {
-            combinedElements
-                .add(createInlineElement(createStyledNode(currentElement)));
-          } else {
-            combinedElements.removeLast();
-            combinedElements
-                .add(createBlockElement(createStyledNode(lastElement)));
-            combinedElements
-                .add(createBlockElement(createStyledNode(currentElement)));
-          }
-        } else if (!isInlineNode(lastElement) && isInlineNode(currentElement)) {
-          if (lastElement.id == currentElement.id) {
-            combinedElements.removeLast();
-            combinedElements
-                .add(createInlineElement(createStyledNode(lastElement)));
-            combinedElements
-                .add(createInlineElement(createStyledNode(currentElement)));
-          } else {
-            combinedElements
-                .add(createBlockElement(createStyledNode(currentElement)));
-          }
-        } else if (!isInlineNode(lastElement) &&
-            !isInlineNode(currentElement)) {
-          combinedElements
-              .add(createBlockElement(createStyledNode(currentElement)));
-        }
-      }
-      lastElement = currentElement;
-    }
-    return combinedElements;
-  }
 
   static StyledElement createInlineElement(StyledNode styledNode) {
     return StyledElement(isInline: true, styledNode: styledNode);
