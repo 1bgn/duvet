@@ -21,10 +21,19 @@ class _PagerState extends State<Pager> {
   late PageController pageController = PageController(initialPage: lastIndex);
   int isNext = 0;
   PageBundle? currentPage;
+  PageBundle? prevPage;
+  PageBundle? nextPage;
   static int globalIndex = 0;
 
   @override
   void initState() {
+    pageController.addListener(() {
+      print("pageListener ${pageController.page}");
+      if(pageController.page!.truncate() == lastIndex){
+        print("GERGER $globalIndex");
+        globalIndex = currentPage!.bottomElement.index;
+      }
+    });
     super.initState();
   }
 
@@ -37,9 +46,11 @@ class _PagerState extends State<Pager> {
     return PageView.builder(
       onPageChanged: (index){
         lastIndex = index;
+        print("GBERGER1233");
       },
       itemBuilder: (BuildContext context, int index) {
-
+        // int index = pageController.page!.truncate();
+        print("itemBuilder $index");
         if(lastIndex<index){
           //next page
           isNext = 1;
@@ -57,7 +68,7 @@ class _PagerState extends State<Pager> {
             TextDecorator.insertFragment(currentPage!.leftPartOfElement!,currentPage!.rightPartOfElement!, bookData.elements);
 
           }
-          globalIndex = currentPage!.currentElements.last.index;
+          // globalIndex = currentPage!.currentElements.last.index;
 
         }else if (isNext == 1){
           // final nextElements = TextDecorator.skipElement(currentPage!.bottomElement.styledNode.childAndParents.id, bookData.elements);
@@ -82,7 +93,7 @@ class _PagerState extends State<Pager> {
 
           }
 
-          globalIndex = currentPage!.bottomElement.index;
+          // globalIndex = currentPage!.bottomElement.index;
           // print("globalIndex ${globalIndex} ${currentPage!.bottomElement}");
 
         }else if(isNext == -1){
@@ -92,10 +103,10 @@ class _PagerState extends State<Pager> {
           // print('previousElementst: ${previousElements.first} ${previousElements.last}');
           print("getPreviousPageBundle $globalIndex ${previousElements.first} ${previousElements[previousElements.length-2]}");
 
-          for (var element in  bookData.elements) {
-            if(element.index<=5352)
-              print("ELEMENT: $element");
-          }
+          // for (var element in  bookData.elements) {
+          //   if(element.index<=5352)
+          //     print("ELEMENT: $element");
+          // }
           // print('firstElement: ${previousElements.first.text}');
           // print('lastElement: ${previousElements.last.text}');
           // print('currentPage!.topElement: ${currentPage!.topElement.text}');
