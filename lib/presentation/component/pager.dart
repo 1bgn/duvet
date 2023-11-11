@@ -20,15 +20,16 @@ class Pager extends StatefulWidget {
 class _PagerState extends State<Pager> {
   BookData get bookData => widget.bookData;
   double lastIndex = 0;
+  int initialPage = 0;
   double lastIndexPos = 0;
-  late PageController pageController = PageController(initialPage: lastIndex.truncate());
+  late PageController pageController = PageController(initialPage: initialPage);
   int currentDirection = 0;
-  int afterDirection = 0;
   PageBundle? currentPage;
   PageBundle? prevPage;
   PageBundle? nextPage;
   static int globalIndex = 0;
   Completer _completer = Completer();
+  final Map<int,PageBundle> pages = {};
 
   @override
   void initState() {
@@ -36,8 +37,11 @@ class _PagerState extends State<Pager> {
     if(currentPage?.rightPartOfElement!=null){
           TextDecorator.insertFragment(currentPage!.leftPartOfElement!,currentPage!.rightPartOfElement!, bookData.elements);
         }
+    pages.putIfAbsent(initialPage, () => currentPage!);
     final nextElements = TextDecorator.skipElementTo(currentPage!.bottomElement.index, bookData.elements);
     nextPage = TextDecorator.getNextPageBundle(bookData.size.maxWidth,bookData.size. maxHeight, nextElements);
+    pages.putIfAbsent(initialPage+1, () => nextPage!);
+
     if(currentPage!.topElement.index!=0){
        final previousElements = TextDecorator.takeElementTo(currentPage!.topElement.index, bookData.elements);
        prevPage = TextDecorator.getPreviousPageBundle(bookData.size.maxWidth,bookData.size. maxHeight, previousElements);
@@ -90,14 +94,12 @@ class _PagerState extends State<Pager> {
   }
 
   void initNextPage(){
-    // if(pageController.page!.truncate() == lastIndexPos.truncate()){
-    //   print("CURR");
-    //   return;
-    // }
+    int nextIndex = pageController.page!.round()+1;
+    if(pages.containsKey(nextIndex)){
+      return;
+    }
 
     if(nextPage?.rightPartOfElement!=null) {
-      // print("GREGER 2222 ${nextPage!.leftPartOfElement}}");
-      // print("GREGER 2222 ${nextPage!.rightPartOfElement}}");
       TextDecorator.insertFragment(nextPage!.leftPartOfElement!,
           nextPage!.rightPartOfElement!, bookData.elements);
     }
@@ -105,15 +107,16 @@ class _PagerState extends State<Pager> {
     final nextElements = TextDecorator.skipElementTo(globalIndex, bookData.elements);
 
     nextPage = TextDecorator.getNextPageBundle(bookData.size.maxWidth,bookData.size. maxHeight, nextElements);
-    print("initNextPage $globalIndex");
+    pages.putIfAbsent(nextIndex, () => nextPage!);
+    print("initNextPage $globalIndex ${pageController.page}");
 
   }
   void initPrevPage(){
 
-    // if(pageController.page!.truncate() == 0){
-    //   print("FIRST PAGE");
-    //   return;
-    // }
+    int prevIndex = pageController.page!.truncate();
+    if(pages.containsKey(prevIndex)){
+      return;
+    }
 
     if(prevPage?.leftPartOfElement!=null) {
       TextDecorator.insertFragment(prevPage!.leftPartOfElement!,
@@ -123,6 +126,8 @@ class _PagerState extends State<Pager> {
     final prevElements = TextDecorator.takeElementTo(globalIndex, bookData.elements);
 
     prevPage = TextDecorator.getPreviousPageBundle(bookData.size.maxWidth,bookData.size. maxHeight, prevElements);
+    pages.putIfAbsent(prevIndex, () => prevPage!);
+
     print("initPrevPage $globalIndex");
   }
 
@@ -158,8 +163,8 @@ class _PagerState extends State<Pager> {
 
         if(currentDirection == 1){
 
-          prevPage = currentPage;
-          page = nextPage;
+
+          page = pages[index];
           currentPage = page;
           print("BUILD NEXT PAGE");
 
@@ -167,9 +172,8 @@ class _PagerState extends State<Pager> {
 
         }else if(currentDirection == -1){
 
-          nextPage = currentPage;
-          page = prevPage;
 
+          page = pages[index];
           currentPage = page;
           print("BUILD PREV PAGE");
 
@@ -200,18 +204,13 @@ class _PagerState extends State<Pager> {
         // afterDirection = pageController.page!.truncate()>lastIndex?1:-1;
         // print("on ScrollEndNotification");
         if(lastIndex<pageController.page!){
-          afterDirection  =1;
+          initNextPage();
         }else if(lastIndex>pageController.page!) {
-          afterDirection = -1;
+          initPrevPage();
         }
-        print("notification $notification $afterDirection");
 
-          if(afterDirection == 1){
-            initNextPage();
-          }else if(afterDirection == -1){
-            initPrevPage();
 
-          }
+
           print("PAGE ${pageController.page} LAST INDEX: $lastIndex");
           lastIndex = pageController.page!;
 
