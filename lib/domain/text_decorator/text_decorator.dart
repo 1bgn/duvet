@@ -269,7 +269,7 @@ class TextDecorator {
             .getPositionForOffset(
                 Offset(maxWidth, lineHeight * freeLines - 1))
             .offset;
-        print("FREE LINES: $freeLines ${removedElement.isInline} ${removedElement.text}");
+        // print("FREE LINES: $freeLines ${removedElement.isInline} ${removedElement.text}");
         // if(charPos!=removedElement.text.length){
         //   leftAndRightParts = splitToLeftAndRight(charPos,removedElement);
         //   spans.add(leftAndRightParts[0]);

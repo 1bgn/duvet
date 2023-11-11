@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:projects/domain/model/book_data.dart';
@@ -17,24 +19,111 @@ class Pager extends StatefulWidget {
 
 class _PagerState extends State<Pager> {
   BookData get bookData => widget.bookData;
-  int lastIndex = 0;
-  late PageController pageController = PageController(initialPage: lastIndex);
-  int isNext = 0;
+  double lastIndex = 0;
+  double lastIndexPos = 0;
+  late PageController pageController = PageController(initialPage: lastIndex.truncate());
+  int currentDirection = 0;
+  int afterDirection = 0;
   PageBundle? currentPage;
   PageBundle? prevPage;
   PageBundle? nextPage;
   static int globalIndex = 0;
+  Completer _completer = Completer();
 
   @override
   void initState() {
+    currentPage =  TextDecorator.getNextPageBundle(bookData.size.maxWidth,bookData.size. maxHeight, bookData.elements);
+    if(currentPage?.rightPartOfElement!=null){
+          TextDecorator.insertFragment(currentPage!.leftPartOfElement!,currentPage!.rightPartOfElement!, bookData.elements);
+        }
+    final nextElements = TextDecorator.skipElementTo(currentPage!.bottomElement.index, bookData.elements);
+    nextPage = TextDecorator.getNextPageBundle(bookData.size.maxWidth,bookData.size. maxHeight, nextElements);
+    if(currentPage!.topElement.index!=0){
+       final previousElements = TextDecorator.takeElementTo(currentPage!.topElement.index, bookData.elements);
+       prevPage = TextDecorator.getPreviousPageBundle(bookData.size.maxWidth,bookData.size. maxHeight, previousElements);
+    }
     pageController.addListener(() {
-      print("pageListener ${pageController.page}");
-      if(pageController.page!.truncate() == lastIndex){
-        print("GERGER $globalIndex");
-        globalIndex = currentPage!.bottomElement.index;
+
+      // print("index ${lastIndexPos.truncate()} ${pageController.page}");
+      if(pageController.page!-pageController.page!.truncate()==0){
+      // print("Current ${lastIndex} ${pageController.page!.truncate()}");
+      // if(currentDirection==1 &&pageController.page!>lastIndex ){
+      //   afterDirection = 1;
+      // }else if (currentDirection==-1 && pageController.page!<lastIndex){
+      //   afterDirection = -1;
+      // }else {
+      //   afterDirection = 0;
+      // }
+      currentDirection = 0;
       }
+      else if(lastIndexPos<pageController.page! ){
+        //next page
+        // print("NEXT");
+
+
+        currentDirection = 1;
+      }else if(lastIndexPos>pageController.page! ) {
+        //preview page
+        // print("PREV");
+
+
+        currentDirection = -1;
+
+      }
+
+      if(pageController.page! - pageController.page!.truncate()==0){
+
+
+        // globalIndex = currentPage!.bottomElement.index;
+
+
+      }
+    lastIndexPos = pageController.page!;
+      // lastIndex = pageController.page!.truncate();
+      // print("pageListener ${pageController.page}");
+      // if(pageController.page!.truncate() == lastIndex){
+      //   // print("GERGER $globalIndex");
+      //   globalIndex = currentPage!.bottomElement.index;
+      // }
     });
     super.initState();
+  }
+
+  void initNextPage(){
+    // if(pageController.page!.truncate() == lastIndexPos.truncate()){
+    //   print("CURR");
+    //   return;
+    // }
+
+    if(nextPage?.rightPartOfElement!=null) {
+      // print("GREGER 2222 ${nextPage!.leftPartOfElement}}");
+      // print("GREGER 2222 ${nextPage!.rightPartOfElement}}");
+      TextDecorator.insertFragment(nextPage!.leftPartOfElement!,
+          nextPage!.rightPartOfElement!, bookData.elements);
+    }
+    globalIndex = currentPage!.bottomElement.index;
+    final nextElements = TextDecorator.skipElementTo(globalIndex, bookData.elements);
+
+    nextPage = TextDecorator.getNextPageBundle(bookData.size.maxWidth,bookData.size. maxHeight, nextElements);
+    print("initNextPage $globalIndex");
+
+  }
+  void initPrevPage(){
+
+    // if(pageController.page!.truncate() == 0){
+    //   print("FIRST PAGE");
+    //   return;
+    // }
+
+    if(prevPage?.leftPartOfElement!=null) {
+      TextDecorator.insertFragment(prevPage!.leftPartOfElement!,
+          prevPage!.rightPartOfElement!, bookData.elements);
+    }
+    globalIndex = currentPage!.topElement.index;
+    final prevElements = TextDecorator.takeElementTo(globalIndex, bookData.elements);
+
+    prevPage = TextDecorator.getPreviousPageBundle(bookData.size.maxWidth,bookData.size. maxHeight, prevElements);
+    print("initPrevPage $globalIndex");
   }
 
   @override
@@ -43,101 +132,60 @@ class _PagerState extends State<Pager> {
         bookData.size.maxWidth, bookData.size.maxHeight, bookData.elements);
     print("${metrics}");
 
-    return PageView.builder(
+    return NotificationListener(child: PageView.builder(
+      physics: BouncingScrollPhysics(),
+      pageSnapping: true,
       onPageChanged: (index){
-        lastIndex = index;
-        print("GBERGER1233");
+        // lastIndex =index;
+        // if(lastIndex<index){
+        //   print("it was next page");
+        //   afterDirection = 1;
+        //   initNextPage();
+
+        // }else if(lastIndex>index){
+        //   print("it was prev page");
+        //   afterDirection = -1;
+        //   initPrevPage();
+        // }else{
+        //   afterDirection = 0;
+        // }
+
       },
       itemBuilder: (BuildContext context, int index) {
-        // int index = pageController.page!.truncate();
-        print("itemBuilder $index");
-        if(lastIndex<index){
-          //next page
-          isNext = 1;
-        }else if(lastIndex == index){
-          //update current page
-          isNext = 0;
+
+        PageBundle? page;
+        print("direction $currentDirection $globalIndex");
+
+        if(currentDirection == 1){
+
+          prevPage = currentPage;
+          page = nextPage;
+          currentPage = page;
+          print("BUILD NEXT PAGE");
+
+
+
+        }else if(currentDirection == -1){
+
+          nextPage = currentPage;
+          page = prevPage;
+
+          currentPage = page;
+          print("BUILD PREV PAGE");
+
+
         }else{
-          //preview page
-          isNext = -1;
+          print("INITPAGE");
+          page = currentPage;
         }
 
-        if(isNext == 0 && currentPage == null){
-          currentPage =  TextDecorator.getNextPageBundle(bookData.size.maxWidth,bookData.size. maxHeight, bookData.elements);
-          if(currentPage?.rightPartOfElement!=null){
-            TextDecorator.insertFragment(currentPage!.leftPartOfElement!,currentPage!.rightPartOfElement!, bookData.elements);
 
-          }
-          // globalIndex = currentPage!.currentElements.last.index;
 
-        }else if (isNext == 1){
-          // final nextElements = TextDecorator.skipElement(currentPage!.bottomElement.styledNode.childAndParents.id, bookData.elements);
-          // if(currentPage?.rightPartOfElement!=null){
-          //   TextDecorator.insertFragment(currentPage!.rightPartOfElement!, bookData.elements);
-          //
-          // }
-          final nextElements = TextDecorator.skipElementTo(globalIndex, bookData.elements);
-
-          // if(currentPage!.rightPartOfElement!=null){
-          //   nextElements.insert(0, currentPage!.rightPartOfElement!);
-          // }
-
-          currentPage = TextDecorator.getNextPageBundle(bookData.size.maxWidth,bookData.size. maxHeight, nextElements);
-          print("currentPage!.currentElements $globalIndex ${currentPage!.currentElements.first} ${currentPage!.currentElements.last}");
-
-          if(currentPage?.rightPartOfElement!=null){
-            // print("LAST nnextElements ${currentPage?.rightPartOfElement}");
-
-            TextDecorator.insertFragment(currentPage!.leftPartOfElement!,currentPage!.rightPartOfElement!, bookData.elements);
-            print("currentPage!.rightPartOfElement! ${currentPage!.rightPartOfElement!}");
-
-          }
-
-          // globalIndex = currentPage!.bottomElement.index;
-          // print("globalIndex ${globalIndex} ${currentPage!.bottomElement}");
-
-        }else if(isNext == -1){
-          // final previousElements = TextDecorator.takeElement(currentPage!.topElement.styledNode.childAndParents.id, bookData.elements);
-          globalIndex = currentPage!.topElement.index;
-          final previousElements = TextDecorator.takeElementTo(globalIndex, bookData.elements);
-          // print('previousElementst: ${previousElements.first} ${previousElements.last}');
-          print("getPreviousPageBundle $globalIndex ${previousElements.first} ${previousElements[previousElements.length-2]}");
-
-          // for (var element in  bookData.elements) {
-          //   if(element.index<=5352)
-          //     print("ELEMENT: $element");
-          // }
-          // print('firstElement: ${previousElements.first.text}');
-          // print('lastElement: ${previousElements.last.text}');
-          // print('currentPage!.topElement: ${currentPage!.topElement.text}');
-
-          // if(prevBundle?.leftPartOfElement!=null){
-          //   previousElements.add(prevBundle!.leftPartOfElement!);
-          //   print('prevBundle!.leftPartOfElement: ${prevBundle?.leftPartOfElement?.text}');
-          // }
-
-          currentPage = TextDecorator.getPreviousPageBundle(bookData.size.maxWidth,bookData.size. maxHeight, previousElements);
-
-          globalIndex = currentPage!.bottomElement.index;
-
-          // print('prevBundle!.rightPartOfElement: ${prevBundle?.rightPartOfElement?.text}');
-
-          // if(currentPage!.rightPartOfElement!=null){
-          //   previousElements.add( currentPage!.rightPartOfElement!);
-          //   print('bottomElement: ${currentPage!.bottomElement.inlineSpan.toPlainText()}');
-          //   print('rightPartOfElement: ${ currentPage!.rightPartOfElement!.inlineSpan.toPlainText()}');
-          //   print('leftPartOfElement: ${ currentPage!.leftPartOfElement!.inlineSpan.toPlainText()}');
-          //
-          // }
-
-        }
-
-        print("globalIndex: $globalIndex");
 
         return RichText(
-text:
+          text:
           TextSpan(
-              children: currentPage!.currentElements
+              children: page!.currentElements
                   .map((e) => e.inlineSpan)
                   .toList(),
               style: TextStyle(color: Colors.black)),
@@ -146,6 +194,33 @@ text:
       },
       controller: pageController,
       itemCount: metrics.pages,
-    );
+    ),onNotification: (notification){
+      if(notification is ScrollEndNotification ){
+
+        // afterDirection = pageController.page!.truncate()>lastIndex?1:-1;
+        // print("on ScrollEndNotification");
+        if(lastIndex<pageController.page!){
+          afterDirection  =1;
+        }else if(lastIndex>pageController.page!) {
+          afterDirection = -1;
+        }
+        print("notification $notification $afterDirection");
+
+          if(afterDirection == 1){
+            initNextPage();
+          }else if(afterDirection == -1){
+            initPrevPage();
+
+          }
+          print("PAGE ${pageController.page} LAST INDEX: $lastIndex");
+          lastIndex = pageController.page!;
+
+        //   globalIndex = currentPage!.bottomElement.index;
+
+
+      }
+      return true;
+
+    },);
   }
 }
