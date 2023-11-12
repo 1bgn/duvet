@@ -9,14 +9,14 @@ class StyledElement{
   final StyledNode styledNode;
   final styleAttributes =StyleAttributes();
   InlineSpan? _inlineSpan;
-  static final _hyphenator =  Hyphenator();
+  // static final _hyphenator =  Hyphenator();
   int index = 0;
   final bool isSplitted;
 
   String? _text;
   @override
   String toString() {
-    return 'StyledElement{id: ${styledNode.childAndParents.id},parents: ${styledNode.childAndParents.parents.map((e) => e.name.qualified).join(" ")} ,index: $index,isInline: $isInline, text: $text}';
+    return 'StyledElement{id: ${styledNode.childAndParents.id},isSplitted: $isSplitted ,index: $index,isInline: $isInline, text: $text}';
   }
 
   StyledElement({required this.isInline, required this.styledNode,this.isSplitted=false});

@@ -161,9 +161,11 @@ class _PagerState extends State<Pager> {
 
             if(orientation!=lastOrientation ){
               pages.clear();
+              // bookData.resetElements();
               initCurrentPage(index,true);
               lastOrientation = orientation;
               print("pages before ${TextDecorator.pagesBefore(currentPage!.topElement.index, bookData.elements, metrics)}");
+
             }else if( currentDirection==-1&&index==0) {
               pages.clear();
               initCurrentPage(index, true,fromBefore: true);

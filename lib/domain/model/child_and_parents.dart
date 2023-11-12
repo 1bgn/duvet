@@ -3,7 +3,7 @@ import 'package:xml/xml.dart';
 class ChildAndParents{
   final XmlNode child;
   final List<XmlElement> parents;
-  final int id;
+   int id;
 
   ChildAndParents({required this.child, required this.parents,this.id=0});
 

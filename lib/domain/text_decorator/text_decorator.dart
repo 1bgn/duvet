@@ -11,9 +11,12 @@ import 'package:xml/xml.dart';
 
 class TextDecorator {
   static final inlineTags = [
-    "a","strong"
+    "a","strong","emphasis"
   ];
 
+  static final outlineTags = [
+    "p",
+  ];
   static InlineSpan fb2Decorate(
     ChildAndParents childAndParents,
   ) {
@@ -68,6 +71,10 @@ class TextDecorator {
           {
             textStyle = textStyle.merge(TextStyle(fontStyle: FontStyle.italic));
           }
+        case "emphasis":
+          {
+            textStyle = textStyle.merge(TextStyle(fontStyle: FontStyle.italic));
+          }
         case "p":
           {
             textAlign = TextAlign.justify;
@@ -98,6 +105,24 @@ class TextDecorator {
     }
     return elements;
   }
+  static bool isInOutlineBlock(List<XmlElement> parents1, List<XmlElement> parents2,){
+    // int parentsCount = childAndParents1.parents.length>childAndParents2.parents.length?childAndParents1.parents.length:childAndParents2.parents.length;
+    bool inOutlineBlock = false;
+    var hp1 = parents1.map((e) => e.hashCode.toString()).toSet();
+    var hp2 = parents2.map((e) => e.hashCode.toString()).toSet();
+    var p1 = parents1.map((e) => e.qualifiedName).toSet();
+    var p2 = parents2.map((e) => e.qualifiedName).toSet();
+    final intersection = p1.intersection(p2);
+    // print("$p1&&$p2");
+
+    if(hp1.first==hp2.first && outlineTags.contains(intersection.first)){
+
+      inOutlineBlock = true;
+
+    }
+
+    return inOutlineBlock;
+  }
   static List<StyledElement> combine(List<ChildAndParents> elements) {
     List<StyledElement> combinedElements = [];
 
@@ -112,14 +137,32 @@ class TextDecorator {
       } else {
         //lastElement != null
         if (isInlineNode(lastElement) && isInlineNode(currentElement)) {
-          combinedElements
-              .add(createInlineElement(createStyledNode(currentElement)));
+          if (lastElement.id == currentElement.id) {
+            combinedElements.removeLast();
+            combinedElements
+                .add(createInlineElement(createStyledNode(lastElement)));
+            combinedElements
+                .add(createInlineElement(createStyledNode(currentElement)));
+          }else{
+            combinedElements.removeLast();
+            combinedElements
+                .add(createBlockElement(createStyledNode(lastElement)));
+            combinedElements
+                .add(createBlockElement(createStyledNode(currentElement)));
+          }
+
+
         } else if (isInlineNode(lastElement) && !isInlineNode(currentElement)) {
           //упростить
           if (lastElement.id == currentElement.id) {
+
             combinedElements
                 .add(createBlockElement(createStyledNode(currentElement)));
+
+
           } else {
+            // print("RVSEVSV ${lastElement} ${currentElement}");
+
             combinedElements.removeLast();
             combinedElements
                 .add(createBlockElement(createStyledNode(lastElement)));
@@ -127,7 +170,7 @@ class TextDecorator {
                 .add(createBlockElement(createStyledNode(currentElement)));
           }
         } else if (!isInlineNode(lastElement) && isInlineNode(currentElement)) {
-          if (lastElement.id == currentElement.id) {
+          if (lastElement.id == currentElement.id ) {
             combinedElements.removeLast();
             combinedElements
                 .add(createInlineElement(createStyledNode(lastElement)));
@@ -323,9 +366,9 @@ class TextDecorator {
 
         final removedElement = spans.removeLast();
         print("REMOVED1 ${textPainter.text!.toPlainText()} ${textPainter.height} $maxHeight");
-        print("REMOVED2 ${textPainter.height} $maxHeight");
+        // print("REMOVED2 ${textPainter.height} $maxHeight");
 
-          if(removedElement.isSplitted){
+          if(removedElement.isSplitted&&false){
             spans.add(removedElement);
           }else{
             print("SPLIT $removedElement");
@@ -336,7 +379,6 @@ class TextDecorator {
 
             final freeHeight =
                 maxHeight - (textPainter.height - removedTextPainter.height);
-            print(freeHeight);
             print(removedTextPainter.preferredLineHeight);
             double lineHeight = -1;
             for (var element in lines) {
@@ -347,11 +389,12 @@ class TextDecorator {
             final freeLines =
             (freeHeight / lineHeight).truncate();
             lns += freeLines;
+            print("free height $freeHeight,free lines $freeLines");
 
 
             final charPos = removedTextPainter
                 .getPositionForOffset(
-                Offset(0, removedTextPainter.preferredLineHeight * freeLines-1))
+                Offset(0, removedTextPainter.preferredLineHeight * (lines.length-freeLines)-1))
                 .offset;
             // print("res ${lines.length} $freeLines  ${removedElement.text.substring(charPos)}");
             // print("res  $freeLines ${spans.last.text} ");
