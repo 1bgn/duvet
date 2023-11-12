@@ -16,7 +16,7 @@ class StyledElement{
   String? _text;
   @override
   String toString() {
-    return 'StyledElement{index: $index,isInline: $isInline, text: $text}';
+    return 'StyledElement{id: ${styledNode.childAndParents.id},parents: ${styledNode.childAndParents.parents.map((e) => e.name.qualified).join(" ")} ,index: $index,isInline: $isInline, text: $text}';
   }
 
   StyledElement({required this.isInline, required this.styledNode,this.isSplitted=false});

@@ -92,14 +92,14 @@ bool isNeedCombine(ChildAndParents element1, ChildAndParents element2) {
   return isInlineNode(element1) || isInlineNode(element2);
 }
 
-bool isRelatives(
-  ChildAndParents element1,
-  ChildAndParents element2,
-) {
-  final parents1 = element1.parents.skip(1).map((e) => e.qualifiedName).join();
-  final parents2 = element2.parents.skip(1).map((e) => e.qualifiedName).join();
-  return parents1.contains(parents2) || parents2.contains(parents1);
-}
+// bool isRelatives(
+//   ChildAndParents element1,
+//   ChildAndParents element2,
+// ) {
+//   final parents1 = element1.parents.skip(1).map((e) => e.qualifiedName).join();
+//   final parents2 = element2.parents.skip(1).map((e) => e.qualifiedName).join();
+//   return parents1.contains(parents2) || parents2.contains(parents1);
+// }
 
 
 

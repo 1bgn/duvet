@@ -11,7 +11,7 @@ import 'package:xml/xml.dart';
 
 class TextDecorator {
   static final inlineTags = [
-    "a",
+    "a","strong"
   ];
 
   static InlineSpan fb2Decorate(
@@ -42,6 +42,7 @@ class TextDecorator {
           {
             textStyle = textStyle.merge(TextStyle(color: Colors.blueAccent));
           }
+
       }
     }
 
@@ -75,6 +76,10 @@ class TextDecorator {
         case "a":
           {
             textStyle = textStyle.merge(TextStyle(color: Colors.blueAccent));
+          }
+        case "strong":
+          {
+            textStyle = textStyle.merge(TextStyle(fontWeight: FontWeight.bold));
           }
       }
     }
@@ -228,8 +233,8 @@ class TextDecorator {
   }
   static void  insertFragment(StyledElement leftFragment,StyledElement rightFragment, List<StyledElement> elements){
     int indWhere = elements.indexWhere((element) => element.index==leftFragment.index);
-
-    if(!elements[indWhere].isSplitted){
+    print("$leftFragment");
+    if(indWhere!=-1&&!elements[indWhere].isSplitted){
       elements.removeAt(indWhere);
       elements.insert(indWhere, rightFragment);
       elements.insert(indWhere, leftFragment);
@@ -271,7 +276,7 @@ class TextDecorator {
             .getPositionForOffset(
                 Offset(maxWidth, lineHeight * freeLines - 1))
             .offset;
-        print("res ${lines.length} $freeLines  ${removedElement.text.substring(charPos)}");
+        // print("res ${lines.length} $freeLines  ${removedElement.text.substring(charPos)}");
         // print("FREE LINES: $freeLines ${removedElement.isInline} ${removedElement.text}");
         // if(charPos!=removedElement.text.length){
         //   leftAndRightParts = splitToLeftAndRight(charPos,removedElement);
@@ -348,8 +353,8 @@ class TextDecorator {
                 .getPositionForOffset(
                 Offset(0, removedTextPainter.preferredLineHeight * freeLines-1))
                 .offset;
-            print("res ${lines.length} $freeLines  ${removedElement.text.substring(charPos)}");
-            print("res  $freeLines ${spans.last.text} ");
+            // print("res ${lines.length} $freeLines  ${removedElement.text.substring(charPos)}");
+            // print("res  $freeLines ${spans.last.text} ");
 
             leftAndRightParts = splitToLeftAndRight(charPos,removedElement);
             spans.add(leftAndRightParts[1]);
@@ -371,6 +376,16 @@ class TextDecorator {
     // }
     final bundle = PageBundle(currentElements: spans.reversed.toList(), leftPartOfElement: leftAndRightParts?[1],rightPartOfElement: leftAndRightParts?[0],lines: textPainter!.computeLineMetrics().length);
     return bundle;
+  }
+  static int pagesBefore(int index,List<StyledElement> elements,MediumMetrics mediumMetrics) {
+
+    final elementsBefore = takeElementTo(index, elements);
+    int wordsBefore = 0;
+    for (var element in elementsBefore) {
+      wordsBefore += element.text.length;
+    }
+    return (wordsBefore/mediumMetrics.words).floor();
+
   }
 
   static List<StyledElement> splitToLeftAndRight(

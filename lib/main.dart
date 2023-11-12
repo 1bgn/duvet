@@ -51,17 +51,16 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   void initState() {
-    rootBundle.load("assets/books/book5.fb2").then((value) {
+    rootBundle.load("assets/books/book4.fb2").then((value) {
       _elements = HyphenatedTextFactory.elementsFromXml(xmlText: utf8.decode(value.buffer.asUint8List()));
       int index = 0;
       for (var element in _elements) {
         element.index = index;
         index += element.text.length;
       }
-      for (var element in _elements) {
-        if(element.text=="\n")
-       print("ELEMENT: $element");
-      }
+      _elements.take(20).forEach((element) {
+        print("FIRST TEXT $element");
+      });
       wordsInBook =  (_elements.map((e) => e.text.split(" ").length).fold(0, (previousValue, element) => previousValue+element));
       setState(() {
         bookIsLoaded = true;
