@@ -208,8 +208,7 @@ class TextDecorator {
     final indexWhere = elements.indexWhere((element) => element.styledNode.childAndParents.id==elementId);
 
     final res = elements.sublist(0,indexWhere);
-    // print("takeElement($indexWhere)=> ${res.first}");
-    // print("($indexWhere)=> ${res.last}");
+
     return res;
   }
   static List<StyledElement>  takeElementTo(int index, List<StyledElement> elements){
@@ -217,12 +216,15 @@ class TextDecorator {
     final res = elements.sublist(0,indexWhere);
     return res;
   }
-  static List<StyledElement>  skipElementTo(int index, List<StyledElement> elements){
+  static List<StyledElement>  skipElementTo(int index, List<StyledElement> elements,{bool indexContains=false}){
+    if(indexContains){
+      return elements.skipWhile((element) => element.index<index).toList();
 
-    int indWhere = elements.indexWhere((element) => element.index>index);
-    // final element = elements[indWhere];
+    }
+    else{
+      return elements.skipWhile((element) => element.index<=index).toList();
 
-    return elements.skipWhile((element) => element.index<=index).toList();
+    }
   }
   static void  insertFragment(StyledElement leftFragment,StyledElement rightFragment, List<StyledElement> elements){
     int indWhere = elements.indexWhere((element) => element.index==leftFragment.index);
@@ -269,6 +271,7 @@ class TextDecorator {
             .getPositionForOffset(
                 Offset(maxWidth, lineHeight * freeLines - 1))
             .offset;
+        print("res ${lines.length} $freeLines  ${removedElement.text.substring(charPos)}");
         // print("FREE LINES: $freeLines ${removedElement.isInline} ${removedElement.text}");
         // if(charPos!=removedElement.text.length){
         //   leftAndRightParts = splitToLeftAndRight(charPos,removedElement);
@@ -296,6 +299,9 @@ class TextDecorator {
   }
   static PageBundle getPreviousPageBundle(
       double maxWidth, double maxHeight, List<StyledElement> elements) {
+    if(elements.isEmpty){
+      return PageBundle(currentElements: [], leftPartOfElement: null, rightPartOfElement: null, lines: 0);
+    }
     List<StyledElement> spans = [];
     int lns = 0;
 
@@ -337,9 +343,7 @@ class TextDecorator {
             (freeHeight / lineHeight).truncate();
             lns += freeLines;
 
-            if(removedElement.isSplitted){
 
-            }
             final charPos = removedTextPainter
                 .getPositionForOffset(
                 Offset(0, removedTextPainter.preferredLineHeight * freeLines-1))
@@ -376,7 +380,7 @@ class TextDecorator {
     // print("RIGHTTEXT ${rightText.isEmpty}");
     final leftStyledElement = StyledElement(
       isSplitted: true,
-        isInline: styledElement.isInline,
+        isInline:  styledElement.isInline|| leftText.isEmpty,
         styledNode: StyledNode(
           textAlign: styledElement.styledNode.textAlign,
             childAndParents: ChildAndParents(
