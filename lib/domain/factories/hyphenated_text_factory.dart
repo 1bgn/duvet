@@ -34,12 +34,12 @@ class HyphenatedTextFactory {
     </bookshelf>'''}) {
 
       final document = XmlDocument.parse(xmlText);
-      final sections = document
-          .findAllElements("body")
+      final List<dynamic> elements = [document.findAllElements("annotation").first,...document.findAllElements("body")];
+      final body = elements
           .map((e) => XmlDecoder.decodeXml(e))
           .expand((element) => element)
           .toList();
-     return  TextDecorator.combine(sections);
+     return  TextDecorator.combine(body);
 
   }
   static Widget widgetFromXml(

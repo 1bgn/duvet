@@ -11,7 +11,7 @@ class _SelectBookState extends State<SelectBook> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(body: SafeArea(child: Center(child: MaterialButton(onPressed: () {
-      Navigator.push(context, MaterialPageRoute(builder: (context)=>BookPage()));
+      Navigator.push(context, MaterialPageRoute(builder: (context)=>const BookPage()));
     },child: Text("Open book"),),)),);
   }
 }

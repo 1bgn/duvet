@@ -25,7 +25,7 @@ class _BookPageState extends State<BookPage> {
 
   @override
   void initState() {
-    rootBundle.load("assets/books/book5.fb2").then((value) {
+    rootBundle.load("assets/books/book4.fb2").then((value) {
       _elements = HyphenatedTextFactory.elementsFromXml(xmlText: utf8.decode(value.buffer.asUint8List()));
       // _elements.take(25).forEach((element) {
       //   print("FIRST TEXT $element");

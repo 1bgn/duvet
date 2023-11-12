@@ -75,6 +75,10 @@ class TextDecorator {
           {
             textStyle = textStyle.merge(TextStyle(fontStyle: FontStyle.italic));
           }
+        case "annotation":
+          {
+            textStyle = textStyle.merge(TextStyle(fontStyle: FontStyle.italic));
+          }
         case "p":
           {
             textAlign = TextAlign.justify;
