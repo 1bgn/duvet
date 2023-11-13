@@ -1,5 +1,5 @@
 import 'package:projects/domain/model/styled_element.dart';
-
+import "package:collection/collection.dart";
 class PageBundle{
   final List<StyledElement> currentElements;
    StyledElement get topElement => currentElements.first;
@@ -7,6 +7,22 @@ class PageBundle{
    final StyledElement? leftPartOfElement;
    final StyledElement? rightPartOfElement;
    final int lines;
+  List< List<StyledElement>> groupByLines(){
+    // currentElements.group;
+    List< List<StyledElement>> lines = [];
+    List<StyledElement> line = [];
+    print("CEWCVEWS ${currentElements.last}");
+    for (var element in currentElements) {
+     line.add(element);
+     if(element.isInline){
+
+     }else{
+       lines.add(line);
+       line = [];
+     }
+    }
+    return lines;
+  }
 
 
   @override

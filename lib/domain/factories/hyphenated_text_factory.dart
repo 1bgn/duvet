@@ -34,7 +34,11 @@ class HyphenatedTextFactory {
     </bookshelf>'''}) {
 
       final document = XmlDocument.parse(xmlText);
-      final List<dynamic> elements = [document.findAllElements("annotation").first,...document.findAllElements("body")];
+      final annotation =  document.findAllElements("annotation");
+      final List<dynamic> elements = document.findAllElements("body").toList();
+      if(annotation.isNotEmpty){
+        elements.insert(0, annotation.first);
+      }
       final body = elements
           .map((e) => XmlDecoder.decodeXml(e))
           .expand((element) => element)

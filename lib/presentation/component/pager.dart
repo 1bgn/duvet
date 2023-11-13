@@ -28,12 +28,13 @@ class _PagerState extends State<Pager> {
   PageBundle? nextPage;
   static int globalIndex = 0;
   Completer _completer = Completer();
-  final Map<int,PageBundle> pages = {};
-  Orientation? lastOrientation= Orientation.portrait;
+  final Map<int, PageBundle> pages = {};
+  Orientation? lastOrientation = Orientation.portrait;
+
   @override
   void initState() {
     double lastIndexPos = 0;
-    initCurrentPage(initialPage,true);
+    initCurrentPage(initialPage, true);
     // Future.delayed(Duration(seconds: 1)).then((value) {
     //   Stream.periodic(Duration(milliseconds: 200)).listen((event) {
     //     pageController.nextPage(duration: Duration(milliseconds: 100), curve: Curves.easeInSine);
@@ -41,68 +42,58 @@ class _PagerState extends State<Pager> {
     // });
 
     pageController.addListener(() {
-
-
-      if(pageController.page!-pageController.page!.truncate()==0){
-
-      currentDirection = 0;
-      }
-      else if(lastIndexPos<pageController.page! ){
-
+      if (pageController.page! - pageController.page!.truncate() == 0) {
+        currentDirection = 0;
+      } else if (lastIndexPos < pageController.page!) {
         currentDirection = 1;
-      }else if(lastIndexPos>pageController.page! ) {
-
-
+      } else if (lastIndexPos > pageController.page!) {
         currentDirection = -1;
-
       }
 
-      if(pageController.page! - pageController.page!.truncate()==0){
-
-
-
-
-
-      }
-    lastIndexPos = pageController.page!;
-
-
+      if (pageController.page! - pageController.page!.truncate() == 0) {}
+      lastIndexPos = pageController.page!;
     });
     super.initState();
   }
-  void initCurrentPage(int indexPage ,bool indexContains,{bool fromBefore=false}){
-    final currentElements = fromBefore?TextDecorator.skipElementTo(0, bookData.elements,indexContains: indexContains):TextDecorator.skipElementTo(currentPage?.topElement.index??0, bookData.elements,indexContains: indexContains);
 
-     currentPage =  TextDecorator.getNextPageBundle(bookData.size.maxWidth,bookData.size. maxHeight, currentElements);
-    if(currentPage?.rightPartOfElement!=null){
-      TextDecorator.insertFragment(currentPage!.leftPartOfElement!,currentPage!.rightPartOfElement!, bookData.elements);
+  void initCurrentPage(int indexPage, bool indexContains,
+      {bool fromBefore = false}) {
+    final currentElements = fromBefore
+        ? TextDecorator.skipElementTo(0, bookData.elements,
+        indexContains: indexContains)
+        : TextDecorator.skipElementTo(
+        currentPage?.topElement.index ?? 0, bookData.elements,
+        indexContains: indexContains);
+
+    currentPage = TextDecorator.getNextPageBundle(
+        bookData.size.maxWidth, bookData.size.maxHeight, currentElements);
+    if (currentPage?.rightPartOfElement != null) {
+      TextDecorator.insertFragment(currentPage!.leftPartOfElement!,
+          currentPage!.rightPartOfElement!, bookData.elements);
     }
     pages.putIfAbsent(indexPage, () => currentPage!);
-    initNextPage(indexPage+1);
+    initNextPage(indexPage + 1);
 
-    initPrevPage(indexPage-1);
+    initPrevPage(indexPage - 1);
     print("initCurrentPage");
-
   }
 
-  void initNextPage(int nextIndex){
-
-
-
-    if(nextPage?.rightPartOfElement!=null) {
+  void initNextPage(int nextIndex) {
+    if (nextPage?.rightPartOfElement != null) {
       TextDecorator.insertFragment(nextPage!.leftPartOfElement!,
           nextPage!.rightPartOfElement!, bookData.elements);
     }
     final globalIndex = currentPage!.bottomElement.index;
-    final nextElements = TextDecorator.skipElementTo(globalIndex, bookData.elements);
+    final nextElements =
+    TextDecorator.skipElementTo(globalIndex, bookData.elements);
 
-    nextPage = TextDecorator.getNextPageBundle(bookData.size.maxWidth,bookData.size. maxHeight, nextElements);
+    nextPage = TextDecorator.getNextPageBundle(
+        bookData.size.maxWidth, bookData.size.maxHeight, nextElements);
     pages.putIfAbsent(nextIndex, () => nextPage!);
     print("$globalIndex");
-
   }
-  void initPrevPage(int prevIndex,){
 
+  void initPrevPage(int prevIndex,) {
     // int prevIndex = 0;
     // if(pageController.positions.isNotEmpty){
     //   prevIndex =  pageController.page!.truncate()-1;
@@ -110,21 +101,24 @@ class _PagerState extends State<Pager> {
     // }else{
     //   prevIndex = initialPage-1;
     // }
-    if(pages.containsKey(prevIndex) || prevIndex<0){
-
+    if (pages.containsKey(prevIndex) || prevIndex < 0) {
       return;
     }
 
-    if(prevPage?.leftPartOfElement!=null) {
+    if (prevPage?.leftPartOfElement != null) {
       TextDecorator.insertFragment(prevPage!.leftPartOfElement!,
           prevPage!.rightPartOfElement!, bookData.elements);
     }
-   final globalIndex = currentPage!.topElement.index;
-    final prevElements = TextDecorator.takeElementTo(globalIndex, bookData.elements);
+    final globalIndex = currentPage!.topElement.index;
+    final prevElements =
+    TextDecorator.takeElementTo(globalIndex, bookData.elements);
 
-    prevPage = TextDecorator.getPreviousPageBundle(bookData.size.maxWidth,bookData.size. maxHeight, prevElements);
+    prevPage = TextDecorator.getPreviousPageBundle(
+        bookData.size.maxWidth, bookData.size.maxHeight, prevElements);
     pages.putIfAbsent(prevIndex, () => prevPage!);
-    print("GLOBAL INDEX $prevIndex ${prevElements.isNotEmpty?prevPage!.topElement:0}");
+    print(
+        "GLOBAL INDEX $prevIndex ${prevElements.isNotEmpty ? prevPage!
+            .topElement : 0}");
 
     print("initPrevPage $globalIndex");
   }
@@ -135,13 +129,12 @@ class _PagerState extends State<Pager> {
         bookData.size.maxWidth, bookData.size.maxHeight, bookData.elements);
     print("${metrics}");
 
-    return OrientationBuilder(
-      builder: (context,orientation) {
-
-        return NotificationListener(child: PageView.builder(
+    return OrientationBuilder(builder: (context, orientation) {
+      return NotificationListener(
+        child: PageView.builder(
           physics: BouncingScrollPhysics(),
           pageSnapping: true,
-          onPageChanged: (index){
+          onPageChanged: (index) {
             // lastIndex =index;
             // if(lastIndex<index){
             //   print("it was next page");
@@ -155,87 +148,83 @@ class _PagerState extends State<Pager> {
             // }else{
             //   afterDirection = 0;
             // }
-
           },
           itemBuilder: (BuildContext context, int index) {
-
-            if(orientation!=lastOrientation ){
+            if (orientation != lastOrientation) {
               pages.clear();
               // bookData.resetElements();
-              initCurrentPage(index,true);
+              initCurrentPage(index, true);
               lastOrientation = orientation;
-              print("pages before ${TextDecorator.pagesBefore(currentPage!.topElement.index, bookData.elements, metrics)}");
-
-            }else if( currentDirection==-1&&index==0) {
+              print(
+                  "pages before ${TextDecorator.pagesBefore(
+                      currentPage!.topElement.index, bookData.elements,
+                      metrics)}");
+            } else if (currentDirection == -1 && index == 0) {
               pages.clear();
-              initCurrentPage(index, true,fromBefore: true);
+              initCurrentPage(index, true, fromBefore: true);
             }
             PageBundle? page;
             print("direction $currentDirection $globalIndex");
 
-            if(currentDirection == 1){
-
-
+            if (currentDirection == 1) {
               page = pages[index];
               currentPage = page;
               print("BUILD NEXT PAGE ${pages[index]}");
-
-
-
-            }else if(currentDirection == -1){
-
-
+            } else if (currentDirection == -1) {
               page = pages[index];
               currentPage = page;
               print("BUILD PREV PAGE $index");
-
-
-            }else{
+            } else {
               print("INITPAGE");
               page = pages[index];
             }
 
-
-
+            for (var element in page!.groupByLines()) {
+              print("TEXTE: ${element}");
+            }
+            //
+            return SizedBox(width: bookData.size.maxWidth,
+                child: SingleChildScrollView(
+                  child: Column(children: page!.groupByLines().map((e) =>
+                      Row(
+                        children: [
+                          Expanded(child: RichText(textAlign:e.last.styledNode.textAlign, text: TextSpan(
+                              children: e.map((e) => e.textSpan).toList()),)),
+                        ],
+                      )).toList(),),
+                ));
 
             return RichText(
-              text:
-              TextSpan(
+
+              text: TextSpan(
                   children: page!.currentElements
                       .map((e) => e.inlineSpan)
                       .toList(),
                   style: TextStyle(color: Colors.black)),
-
             );
           },
           controller: pageController,
           itemCount: metrics.pages,
-        ),onNotification: (notification){
-          if(notification is ScrollEndNotification ){
-
+        ),
+        onNotification: (notification) {
+          if (notification is ScrollEndNotification) {
             // afterDirection = pageController.page!.truncate()>lastIndex?1:-1;
             // print("on ScrollEndNotification");
-            if(lastIndex<pageController.page!){
-
-              initNextPage(pageController.page!.round()+1);
-            }else if(lastIndex>pageController.page!) {
-              initPrevPage(pageController.page!.truncate()-1);
+            if (lastIndex < pageController.page!) {
+              initNextPage(pageController.page!.round() + 1);
+            } else if (lastIndex > pageController.page!) {
+              initPrevPage(pageController.page!.truncate() - 1);
             }
 
-
-
-              print("PAGE ${pageController.page} LAST INDEX: $lastIndex");
-              lastIndex = pageController.page!;
-              currentPage = pages[pageController.page!.truncate()];
+            print("PAGE ${pageController.page} LAST INDEX: $lastIndex");
+            lastIndex = pageController.page!;
+            currentPage = pages[pageController.page!.truncate()];
 
             //   globalIndex = currentPage!.bottomElement.index;
-
-
           }
           return true;
-
-        },);
-      }
-    );
+        },
+      );
+    });
   }
 }

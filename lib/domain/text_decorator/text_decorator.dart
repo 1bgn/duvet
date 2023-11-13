@@ -55,20 +55,24 @@ class TextDecorator {
   static StyledNode createStyledNode(
     ChildAndParents childAndParents,
   ) {
-    TextStyle textStyle = const TextStyle(inherit: true);
-    TextAlign textAlign = TextAlign.left;
+    TextStyle textStyle = const TextStyle(inherit: true,color: Colors.black);
+    TextAlign textAlign = TextAlign.justify;
     for (var element in childAndParents.parents.reversed) {
       switch (element.qualifiedName) {
         case "book-title":
           {
+            textAlign = TextAlign.center;
            textStyle = textStyle.merge(TextStyle(fontWeight: FontWeight.bold,fontSize: 14));
           }
         case "title":
           {
+            textAlign = TextAlign.center;
             textStyle = textStyle.merge(TextStyle(fontWeight: FontWeight.bold,fontSize: 14));
           }
         case "epigraph":
           {
+            textAlign = TextAlign.end;
+
             textStyle = textStyle.merge(TextStyle(fontStyle: FontStyle.italic));
           }
         case "emphasis":
@@ -81,7 +85,7 @@ class TextDecorator {
           }
         case "p":
           {
-            textAlign = TextAlign.justify;
+            textAlign = textAlign!=TextAlign.justify?textAlign:TextAlign.justify;
             textStyle = textStyle.merge(TextStyle());
           }
         case "a":
@@ -102,7 +106,7 @@ class TextDecorator {
       double maxWidth, List<StyledElement> elements) {
     for (var element in elements) {
       TextPainter textPainter = TextPainter(
-          text: element.inlineSpan, textDirection: TextDirection.ltr);
+          text: element.inlineSpan, textDirection: TextDirection.ltr,textAlign: element.styledNode.textAlign);
       textPainter.layout(maxWidth: maxWidth);
       element.styleAttributes.height += textPainter.height;
       element.styleAttributes.width += textPainter.width;
@@ -213,6 +217,7 @@ class TextDecorator {
   static List<InlineSpan> getPage(
       double maxWidth, double maxHeight, List<StyledElement> elements) {
     List<InlineSpan> spans = [];
+    TextAlign textAlign = TextAlign.justify;
     for (var element in elements) {
       TextPainter textPainter = TextPainter(
 
