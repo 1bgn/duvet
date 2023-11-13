@@ -9,7 +9,7 @@ class XmlDecoder{
     "a","strong","emphasis"
   ];
   static final outlineTags = [
-    "p",
+    "p","empty-line"
   ];
 
   static bool isInOutlineBlock(List<XmlElement> parents1, List<XmlElement> parents2,){
@@ -52,29 +52,35 @@ class XmlDecoder{
     }
     return elements;
   }
-  static List<ChildAndParents> decodeXml(XmlNode xmlElement,{int? ID}){
-    final descendants = xmlElement.children.where((element) => element.text.trim().isNotEmpty) ;
+  static List<ChildAndParents> decodeXml(XmlNode xmlElement,{int? ID,bool isEmptyLine=false}){
+    final descendants = xmlElement.children ;
     List<ChildAndParents> elements = [];
     // print(descendants);
     int id =ID?? Random().nextInt(10000000);
     XmlNode? lastElement = null;
+    if(isEmptyLine){
+      elements.add(ChildAndParents(child: xmlElement, parents: parents(xmlElement),id: id));
+
+    }
     for (var element in descendants) {
 
-      if(element.nodeType == XmlNodeType.TEXT &&element.text.trim().isNotEmpty){
+      if(element.nodeType == XmlNodeType.TEXT){
         elements.add(ChildAndParents(child: element, parents: parents(element),id: id));
-      }else if(element.nodeType == XmlNodeType.ELEMENT){
+      }else if(element.nodeType == XmlNodeType.ELEMENT ){
         if(lastElement?.nodeType==XmlNodeType.TEXT  ){
           // print(lastElement);
-          // print(element);
           // print("==$id==");
-          elements.addAll(decodeXml(element,ID: id));
+          elements.addAll(decodeXml(element,ID: id,));
 
         }else{
-          if(isOutlineNode(element)){
+
+          if(isOutlineNode(element) ){
 
             elements.addAll(decodeXml(element,ID: id));
           }else{
-            elements.addAll(decodeXml(element));
+
+            final elem = element as XmlElement;
+            elements.addAll(decodeXml(element,isEmptyLine: elem.qualifiedName=="empty-line"));
 
           }
 
@@ -82,7 +88,6 @@ class XmlDecoder{
       }
       lastElement = element;
     }
-
     return elements;
   }
 

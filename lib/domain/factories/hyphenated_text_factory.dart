@@ -36,13 +36,14 @@ class HyphenatedTextFactory {
       final document = XmlDocument.parse(xmlText);
       final annotation =  document.findAllElements("annotation");
       final List<dynamic> elements = document.findAllElements("body").toList();
-      if(annotation.isNotEmpty){
-        elements.insert(0, annotation.first);
-      }
+      // if(annotation.isNotEmpty){
+      //   elements.insert(0, annotation.first);
+      // }
       final body = elements
           .map((e) => XmlDecoder.decodeXml(e))
           .expand((element) => element)
           .toList();
+
      return  TextDecorator.combine(body);
 
   }

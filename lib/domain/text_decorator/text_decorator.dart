@@ -64,10 +64,20 @@ class TextDecorator {
             textAlign = TextAlign.center;
            textStyle = textStyle.merge(TextStyle(fontWeight: FontWeight.bold,fontSize: 14));
           }
+          case "text-author":
+          {
+
+           textStyle = textStyle.merge(TextStyle(fontWeight: FontWeight.bold,fontSize: 14));
+          }
         case "title":
           {
             textAlign = TextAlign.center;
             textStyle = textStyle.merge(TextStyle(fontWeight: FontWeight.bold,fontSize: 14));
+          }
+          case "subtitle":
+          {
+            textAlign = TextAlign.center;
+       
           }
         case "epigraph":
           {
@@ -96,6 +106,7 @@ class TextDecorator {
           {
             textStyle = textStyle.merge(TextStyle(fontWeight: FontWeight.bold));
           }
+
       }
     }
 

@@ -18,7 +18,7 @@ class StyledElement {
 
   @override
   String toString() {
-    return 'StyledElement{id: ${styledNode.childAndParents.id},isSplitted: $isSplitted ,index: $index,isInline: $isInline, text: ${text.length>100?text.substring(0,100):text}}';
+    return 'StyledElement{id: ${styledNode.childAndParents.id},isSplitted: $isSplitted ,index: $index, parents: ${styledNode.childAndParents.parents.map((e) => e.qualifiedName).join(" ")},isInline: $isInline, text: ${text.length>100?text.substring(0,100):text}}';
   }
 
   StyledElement(
