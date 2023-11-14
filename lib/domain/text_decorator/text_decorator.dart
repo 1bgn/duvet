@@ -11,7 +11,7 @@ import 'package:xml/xml.dart';
 
 class TextDecorator {
   static final inlineTags = [
-    "a","strong","emphasis"
+    "a","strong","emphasis","section-separator"
   ];
 
   static final outlineTags = [
@@ -313,14 +313,20 @@ class TextDecorator {
     List<StyledElement>? leftAndRightParts;
     TextPainter? textPainter ;
     for (var element in elements) {
+
        textPainter = TextPainter(
           text: TextSpan(children: spans.map((e) => e.inlineSpan).toList()),
           textDirection: TextDirection.ltr);
       textPainter.layout(maxWidth: maxWidth);
-      if (textPainter.height > maxHeight) {
+
+     if(   element.styledNode.childAndParents.parents.first.qualifiedName=="section-separator"){
+    maxHeight = 0;
+    //не отображается  "пролог"
+
+    }else if (textPainter.height > maxHeight) {
         final removedElement = spans.removeLast();
         TextPainter removedTextPainter = TextPainter(
-            text: removedElement.inlineSpan, textDirection: TextDirection.ltr);
+            text: removedElement.inlineSpan,textAlign: removedElement.styledNode.textAlign, textDirection: TextDirection.ltr);
         removedTextPainter.layout(maxWidth: maxWidth);
         final lines = removedTextPainter.computeLineMetrics();
         final freeHeight =
@@ -339,7 +345,7 @@ class TextDecorator {
             .getPositionForOffset(
                 Offset(maxWidth, lineHeight * freeLines - 1))
             .offset;
-        // print("res ${lines.length} $freeLines  ${removedElement.text.substring(charPos)}");
+        print("res ${lines.length} $freeLines  ${removedElement.text.substring(charPos)}");
         // print("FREE LINES: $freeLines ${removedElement.isInline} ${removedElement.text}");
         // if(charPos!=removedElement.text.length){
         //   leftAndRightParts = splitToLeftAndRight(charPos,removedElement);

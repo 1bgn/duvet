@@ -10,7 +10,7 @@ class StyledElement {
   final styleAttributes = StyleAttributes();
   InlineSpan? _inlineSpan;
 
-  // static final _hyphenator =  Hyphenator();
+  static final _hyphenator =  Hyphenator();
   int index = 0;
   final bool isSplitted;
 
@@ -27,7 +27,7 @@ class StyledElement {
       this.isSplitted = false});
 
   String get text {
-    // _text ??=  _hyphenator.hyphenate(styledNode.childAndParents.child.text);
+    // _text ??=  _hyphenator.hyphenate(styledNode.childAndParents.child.text,);
     _text ??= styledNode.childAndParents.child.text;
     return _text!;
   }

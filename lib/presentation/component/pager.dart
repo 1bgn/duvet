@@ -1,5 +1,6 @@
 import 'dart:async';
 
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:projects/domain/model/book_data.dart';
@@ -182,14 +183,15 @@ class _PagerState extends State<Pager> {
             for (var element in page!.groupByLines()) {
               print("TEXTE: ${element}");
             }
-            //
+
+
             return SizedBox(width: bookData.size.maxWidth,
                 child: SingleChildScrollView(
                   child: Column(children: page!.groupByLines().map((e) =>
                       Row(
                         children: [
                           Expanded(child: RichText(textAlign:e.last.styledNode.textAlign, text: TextSpan(
-                              children: e.map((e) => e.textSpan).toList()),)),
+                              children: e.map((e) => e.textSpan).toList(),),)),
                         ],
                       )).toList(),),
                 ));

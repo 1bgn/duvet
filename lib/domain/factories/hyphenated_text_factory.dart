@@ -35,7 +35,7 @@ class HyphenatedTextFactory {
 
       final document = XmlDocument.parse(xmlText);
       final annotation =  document.findAllElements("annotation");
-      final List<dynamic> elements = document.findAllElements("body").toList();
+      final List<dynamic> elements = document.findAllElements("body").map((e) => [e,XmlDecoder.createSectionSeparator()]) .expand((element) => element).toList();
       // if(annotation.isNotEmpty){
       //   elements.insert(0, annotation.first);
       // }
@@ -43,7 +43,10 @@ class HyphenatedTextFactory {
           .map((e) => XmlDecoder.decodeXml(e))
           .expand((element) => element)
           .toList();
-
+      print("LEN ${elements.length}");
+      // body.take(10000).forEach((element) {
+      //   print("FIRST TEXT $element");
+      // });
      return  TextDecorator.combine(body);
 
   }
@@ -65,8 +68,10 @@ class HyphenatedTextFactory {
     if(_elements ==null){
       final document = XmlDocument.parse(xmlText);
       final sections = document
-          .findAllElements("body")
+          .findAllElements("section")
           .map((e) => XmlDecoder.decodeXml(e))
+
+
           .expand((element) => element)
           .toList();
       _elements = TextDecorator.combine(sections);

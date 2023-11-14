@@ -11,7 +11,6 @@ class PageBundle{
     // currentElements.group;
     List< List<StyledElement>> lines = [];
     List<StyledElement> line = [];
-    print("CEWCVEWS ${currentElements.last}");
     for (var element in currentElements) {
      line.add(element);
      if(element.isInline){

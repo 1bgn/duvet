@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -24,12 +25,13 @@ class _BookPageState extends State<BookPage> {
 
   @override
   void initState() {
-    rootBundle.load("assets/books/book5.fb2").then((value) {
+    rootBundle.load("assets/books/book4.fb2").then((value)async {
+
       _elements = HyphenatedTextFactory.elementsFromXml(
           xmlText: utf8.decode(value.buffer.asUint8List()).replaceAll("\n", ""));
-      // _elements.take(25).forEach((element) {
-      //   print("FIRST TEXT $element");
-      // });
+      _elements.take(50).forEach((element) {
+        print("FIRST TEXT $element");
+      });
       int index = 0;
       for (var element in _elements) {
         element.index = index;
@@ -52,24 +54,27 @@ class _BookPageState extends State<BookPage> {
       body: SafeArea(child: StatefulBuilder(
         builder:
             (BuildContext context, void Function(void Function()) setState) {
-          return LayoutBuilder(builder: (context, size) {
-            if (bookIsLoaded) {
-              return Row(
-                children: [
-                  Expanded(
-                      child: Pager(
-                    bookData: BookData(
-                      countWordsInBook: wordsInBook,
-                      elements: _elements,
-                      size: size,
-                    ),
-                  ))
-                ],
-              );
-            } else {
-              return CircularProgressIndicator();
-            }
-          });
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12,vertical: 6),
+            child: LayoutBuilder(builder: (context, size) {
+              if (bookIsLoaded) {
+                return Row(
+                  children: [
+                    Expanded(
+                        child: Pager(
+                      bookData: BookData(
+                        countWordsInBook: wordsInBook,
+                        elements: _elements,
+                        size: size,
+                      ),
+                    ))
+                  ],
+                );
+              } else {
+                return CircularProgressIndicator();
+              }
+            }),
+          );
         },
       )),
     );

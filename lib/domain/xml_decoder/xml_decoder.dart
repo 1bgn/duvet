@@ -52,6 +52,9 @@ class XmlDecoder{
     }
     return elements;
   }
+  static XmlNode createSectionSeparator(){
+    return XmlElement(XmlName('section-separator'), [], [  XmlElement(XmlName('section-separator',), )]);
+  }
   static List<ChildAndParents> decodeXml(XmlNode xmlElement,{int? ID,bool isEmptyLine=false}){
     final descendants = xmlElement.children ;
     List<ChildAndParents> elements = [];
@@ -81,6 +84,11 @@ class XmlDecoder{
 
             final elem = element as XmlElement;
             elements.addAll(decodeXml(element,isEmptyLine: elem.qualifiedName=="empty-line"));
+            if(element.qualifiedName=="section"){
+              final separator  = createSectionSeparator();
+
+              elements.add(ChildAndParents(child: separator, parents: parents(separator.firstChild!),id: id));
+            }
 
           }
 
