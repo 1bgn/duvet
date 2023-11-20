@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:projects/domain/model/child_and_parents.dart';
@@ -11,7 +13,7 @@ import 'package:xml/xml.dart';
 
 class TextDecorator {
   static final inlineTags = [
-    "a","strong","emphasis","section-separator"
+    "a","strong","emphasis","section-separator","image"
   ];
 
   static final outlineTags = [
@@ -209,13 +211,13 @@ class TextDecorator {
     }
     return combinedElements;
   }
-  static MediumMetrics mediumMetrics(int countWordsInBook, double maxWidth, double maxHeight, List<StyledElement> elements){
-    int testPages = 1;
+  static MediumMetrics mediumMetrics(int countWordsInBook, double maxWidth, double maxHeight, List<StyledElement> elements,Map<String,XmlNode> binaries){
+    int testPages = 5;
     PageBundle? pageBundle ;
     int lines = 0;
     int words = 0;
     for (int i = 0;i<testPages;i++){
-      pageBundle = getNextPageBundle(maxWidth, maxHeight, elements);
+      pageBundle = getNextPageBundle(maxWidth, maxHeight, elements,binaries);
       lines += pageBundle.lines;
       words += pageBundle.currentElements.map((e) => e.text.split(" ").length).fold(0, (previousValue, element) => previousValue+element);
       elements = skipElement(pageBundle.rightPartOfElement?.styledNode.childAndParents.id??pageBundle.currentElements.last.styledNode.childAndParents.id, elements);
@@ -296,7 +298,7 @@ class TextDecorator {
   }
   static void  insertFragment(StyledElement leftFragment,StyledElement rightFragment, List<StyledElement> elements){
     int indWhere = elements.indexWhere((element) => element.index==leftFragment.index);
-    print("$leftFragment");
+    // print("$leftFragment");
     if(indWhere!=-1&&!elements[indWhere].isSplitted){
       elements.removeAt(indWhere);
       elements.insert(indWhere, rightFragment);
@@ -306,27 +308,33 @@ class TextDecorator {
   }
 
   static PageBundle getNextPageBundle(
-      double maxWidth, double maxHeight, List<StyledElement> elements) {
+      double maxWidth, double maxHeight, List<StyledElement> elements,Map<String,XmlNode> binaries) {
     List<StyledElement> spans = [];
     // elements = elements.skip(40).toList();
     int removedLines = 0;
     List<StyledElement>? leftAndRightParts;
     TextPainter? textPainter ;
     for (var element in elements) {
+      if(   element.styledNode.childAndParents.parents.first.qualifiedName=="section-separator"){
+        maxHeight = 0;
+        spans.add(element);
+        break;
 
+      }else if( element.styledNode.childAndParents.parents.first.qualifiedName=="image"){
+       final imageId = element.styledNode.childAndParents.child.getAttribute("l:href")!.replaceFirst("#", "");
+       // final bytes = base64Decode(binary);
+       //
+       // final decodedImage = await decodeImageFromList(bytes);
+
+       print("IMAGE ${binaries[imageId]}");
+        continue;
+      }
        textPainter = TextPainter(
           text: TextSpan(children: spans.map((e) => e.inlineSpan).toList()),
           textDirection: TextDirection.ltr);
       textPainter.layout(maxWidth: maxWidth);
 
-     if(   element.styledNode.childAndParents.parents.first.qualifiedName=="section-separator"){
-       maxHeight = 0;
-       print("VREVGBSRFVX ${spans}");
-       spans.add(element);
-       break;
-       //не отображается  "пролог"
 
-     }else
        if (textPainter.height > maxHeight) {
         final removedElement = spans.removeLast();
         TextPainter removedTextPainter = TextPainter(
@@ -349,7 +357,7 @@ class TextDecorator {
             .getPositionForOffset(
                 Offset(maxWidth, lineHeight * freeLines - 1))
             .offset;
-        print("res ${lines.length} $freeLines  ${removedElement.text.substring(charPos)}");
+        // print("res ${lines.length} $freeLines  ${removedElement.text.substring(charPos)}");
         // print("FREE LINES: $freeLines ${removedElement.isInline} ${removedElement.text}");
         // if(charPos!=removedElement.text.length){
         //   leftAndRightParts = splitToLeftAndRight(charPos,removedElement);
@@ -395,13 +403,13 @@ class TextDecorator {
       if (textPainter.height > maxHeight ) {
 
         final removedElement = spans.removeLast();
-        print("REMOVED1 ${textPainter.text!.toPlainText()} ${textPainter.height} $maxHeight");
+        // print("REMOVED1 ${textPainter.text!.toPlainText()} ${textPainter.height} $maxHeight");
         // print("REMOVED2 ${textPainter.height} $maxHeight");
 
           if(removedElement.isSplitted&&false){
             spans.add(removedElement);
           }else{
-            print("SPLIT $removedElement");
+            // print("SPLIT $removedElement");
             TextPainter removedTextPainter = TextPainter(
                 text: removedElement.inlineSpan, textDirection: TextDirection.ltr);
             removedTextPainter.layout(maxWidth: maxWidth);
@@ -419,7 +427,7 @@ class TextDecorator {
             final freeLines =
             (freeHeight / lineHeight).truncate();
             lns += freeLines;
-            print("free height $freeHeight,free lines $freeLines");
+            // print("free height $freeHeight,free lines $freeLines");
 
 
             final charPos = removedTextPainter

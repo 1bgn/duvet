@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 
 import '../../../domain/factories/hyphenated_text_factory.dart';
 import '../../../domain/model/book_data.dart';
+import '../../../domain/model/decoded_xml.dart';
 import '../../../domain/model/styled_element.dart';
 import '../../component/pager.dart';
 
@@ -20,25 +21,25 @@ class BookPage extends StatefulWidget {
 
 class _BookPageState extends State<BookPage> {
   bool bookIsLoaded = false;
-  late final List<StyledElement> _elements;
+  late final DecodedXml decodedXml;
   late final int wordsInBook;
 
   @override
   void initState() {
-    rootBundle.load("assets/books/book4.fb2").then((value)async {
+    rootBundle.load("assets/books/book6.fb2").then((value)async {
 
-      _elements = HyphenatedTextFactory.elementsFromXml(
+      decodedXml = HyphenatedTextFactory.elementsFromXml(
           xmlText: utf8.decode(value.buffer.asUint8List()).replaceAll("\n", ""));
-      _elements.take(50).forEach((element) {
+      decodedXml.elements.take(50).forEach((element) {
         print("FIRST TEXT $element");
       });
       int index = 0;
-      for (var element in _elements) {
+      for (var element in decodedXml.elements) {
         element.index = index;
         index += element.text.isEmpty?1: element.text.length;
       }
 
-      wordsInBook = (_elements
+      wordsInBook = (decodedXml.elements
           .map((e) => e.text.split(" ").length)
           .fold(0, (previousValue, element) => previousValue + element));
       setState(() {
@@ -64,7 +65,7 @@ class _BookPageState extends State<BookPage> {
                         child: Pager(
                       bookData: BookData(
                         countWordsInBook: wordsInBook,
-                        elements: _elements,
+                        decodedXml: decodedXml,
                         size: size,
                       ),
                     ))

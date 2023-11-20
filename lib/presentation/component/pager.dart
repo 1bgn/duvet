@@ -37,8 +37,10 @@ class _PagerState extends State<Pager> {
     double lastIndexPos = 0;
     initCurrentPage(initialPage, true);
     // Future.delayed(Duration(seconds: 1)).then((value) {
-    //   Stream.periodic(Duration(milliseconds: 200)).listen((event) {
-    //     pageController.nextPage(duration: Duration(milliseconds: 100), curve: Curves.easeInSine);
+    //   Stream.periodic(Duration(milliseconds: 50)).listen((event) {
+    //     if(pageController.page != 1156){
+    //       pageController.nextPage(duration: Duration(milliseconds: 1), curve: Curves.easeInSine);
+    //     }
     //   });
     // });
 
@@ -59,19 +61,19 @@ class _PagerState extends State<Pager> {
 
   void initCurrentPage(int indexPage, bool indexContains,
       {bool fromBefore = false}) {
-    print("initCurrentPage() $indexPage");
+    // print("initCurrentPage() $indexPage");
     final currentElements = fromBefore
-        ? TextDecorator.skipElementTo(0, bookData.elements,
+        ? TextDecorator.skipElementTo(0, bookData.decodedXml.elements,
         indexContains: indexContains)
         : TextDecorator.skipElementTo(
-        currentPage?.topElement.index ?? 0, bookData.elements,
+        currentPage?.topElement.index ?? 0, bookData.decodedXml.elements,
         indexContains: indexContains);
 
     currentPage = TextDecorator.getNextPageBundle(
-        bookData.size.maxWidth, bookData.size.maxHeight, currentElements);
+        bookData.size.maxWidth, bookData.size.maxHeight, currentElements,bookData.decodedXml.binaries);
     if (currentPage?.rightPartOfElement != null) {
       TextDecorator.insertFragment(currentPage!.leftPartOfElement!,
-          currentPage!.rightPartOfElement!, bookData.elements);
+          currentPage!.rightPartOfElement!, bookData.decodedXml.elements);
     }
     pages.putIfAbsent(indexPage, () => currentPage!);
     initNextPage(indexPage + 1);
@@ -83,16 +85,16 @@ class _PagerState extends State<Pager> {
   void initNextPage(int nextIndex) {
     if (nextPage?.rightPartOfElement != null) {
       TextDecorator.insertFragment(nextPage!.leftPartOfElement!,
-          nextPage!.rightPartOfElement!, bookData.elements);
+          nextPage!.rightPartOfElement!, bookData.decodedXml.elements);
     }
     final globalIndex = currentPage!.bottomElement.index;
     final nextElements =
-    TextDecorator.skipElementTo(globalIndex, bookData.elements);
+    TextDecorator.skipElementTo(globalIndex, bookData.decodedXml.elements);
 
     nextPage = TextDecorator.getNextPageBundle(
-        bookData.size.maxWidth, bookData.size.maxHeight, nextElements);
+        bookData.size.maxWidth, bookData.size.maxHeight, nextElements, bookData.decodedXml.binaries);
     pages.putIfAbsent(nextIndex, () => nextPage!);
-    print("$globalIndex");
+    // print("$globalIndex");
   }
 
   void initPrevPage(int prevIndex,) {
@@ -109,20 +111,20 @@ class _PagerState extends State<Pager> {
 
     if (prevPage?.leftPartOfElement != null) {
       TextDecorator.insertFragment(prevPage!.leftPartOfElement!,
-          prevPage!.rightPartOfElement!, bookData.elements);
+          prevPage!.rightPartOfElement!, bookData.decodedXml.elements);
     }
     final globalIndex = currentPage!.topElement.index;
     final prevElements =
-    TextDecorator.takeElementTo(globalIndex, bookData.elements);
+    TextDecorator.takeElementTo(globalIndex, bookData.decodedXml.elements);
 
     prevPage = TextDecorator.getPreviousPageBundle(
         bookData.size.maxWidth, bookData.size.maxHeight, prevElements);
     pages.putIfAbsent(prevIndex, () => prevPage!);
-    print(
-        "GLOBAL INDEX $prevIndex ${prevElements.isNotEmpty ? prevPage!
-            .topElement : 0}");
-
-    print("initPrevPage $globalIndex");
+    // print(
+    //     "GLOBAL INDEX $prevIndex ${prevElements.isNotEmpty ? prevPage!
+    //         .topElement : 0}");
+    //
+    // print("initPrevPage $globalIndex");
   }
 
   @override
@@ -130,7 +132,7 @@ class _PagerState extends State<Pager> {
 
 
     final metrics = TextDecorator.mediumMetrics(bookData.countWordsInBook,
-        bookData.size.maxWidth, bookData.size.maxHeight, bookData.elements);
+        bookData.size.maxWidth, bookData.size.maxHeight, bookData.decodedXml.elements, bookData.decodedXml.binaries);
     print("${metrics}");
 
     return OrientationBuilder(builder: (context, orientation) {
@@ -159,10 +161,10 @@ class _PagerState extends State<Pager> {
               // bookData.resetElements();
               initCurrentPage(index, true);
               lastOrientation = orientation;
-              print(
-                  "pages before ${TextDecorator.pagesBefore(
-                      currentPage!.topElement.index, bookData.elements,
-                      metrics)}");
+              // print(
+              //     "pages before ${TextDecorator.pagesBefore(
+              //         currentPage!.topElement.index, bookData.elements,
+              //         metrics)}");
             } else if (currentDirection == -1 && index == 0) {
               // pages.clear();
               initCurrentPage(index, true, fromBefore: true);
@@ -173,19 +175,19 @@ class _PagerState extends State<Pager> {
             if (currentDirection == 1) {
               page = pages[index];
               currentPage = page;
-              print("BUILD NEXT PAGE ${pages[index]}");
+              // print("BUILD NEXT PAGE ${pages[index]}");
             } else if (currentDirection == -1) {
               page = pages[index];
               currentPage = page;
-              print("BUILD PREV PAGE $index");
+              // print("BUILD PREV PAGE $index");
             } else {
-              print("INITPAGE");
+              // print("INITPAGE");
               page = pages[index];
             }
 
-            for (var element in page!.groupByLines()) {
-              print("TEXTE: ${element}");
-            }
+            // for (var element in page!.groupByLines()) {
+            //   print("TEXTE: ${element}");
+            // }
 
 
             return SizedBox(width: bookData.size.maxWidth,
@@ -221,7 +223,7 @@ class _PagerState extends State<Pager> {
               initPrevPage(pageController.page!.truncate() - 1);
             }
 
-            print("PAGE ${pageController.page} LAST INDEX: $lastIndex");
+            // print("PAGE ${pageController.page} LAST INDEX: $lastIndex");
             lastIndex = pageController.page!;
             currentPage = pages[pageController.page!.truncate()];
 

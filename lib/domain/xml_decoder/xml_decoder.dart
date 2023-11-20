@@ -20,8 +20,7 @@ class XmlDecoder{
     var p1 = parents1.map((e) => e.qualifiedName).toSet();
     var p2 = parents2.map((e) => e.qualifiedName).toSet();
     final intersection = p1.intersection(p2);
-    print("$p1&&$p2");
-    print("$hp1&&$hp2");
+
 
     if(hp1.first==hp2.first && outlineTags.contains(intersection.first)){
 
@@ -55,22 +54,23 @@ class XmlDecoder{
   static XmlNode createSectionSeparator(){
     return XmlElement(XmlName('section-separator'), [], [  XmlElement(XmlName('section-separator',), )]);
   }
-  static List<ChildAndParents> decodeXml(XmlNode xmlElement,{int? ID,bool isEmptyLine=false}){
+  static List<ChildAndParents> decodeXml(XmlNode xmlElement,{int? ID,bool isEmptyBlock=false}){
     final descendants = xmlElement.children ;
     List<ChildAndParents> elements = [];
     // print(descendants);
     int id =ID?? Random().nextInt(10000000);
     XmlNode? lastElement = null;
-    if(isEmptyLine){
-      elements.add(ChildAndParents(child: xmlElement, parents: parents(xmlElement),id: id));
+    if(isEmptyBlock){
 
+      elements.add(ChildAndParents(child: xmlElement, parents: parents(xmlElement)..insert(0, xmlElement as XmlElement),id: id));
     }
     for (var element in descendants) {
 
       if(element.nodeType == XmlNodeType.TEXT){
+
         elements.add(ChildAndParents(child: element, parents: parents(element),id: id));
       }else if(element.nodeType == XmlNodeType.ELEMENT ){
-        if(lastElement?.nodeType==XmlNodeType.TEXT  ){
+       if(lastElement?.nodeType==XmlNodeType.TEXT  ){
           // print(lastElement);
           // print("==$id==");
           elements.addAll(decodeXml(element,ID: id,));
@@ -83,7 +83,8 @@ class XmlDecoder{
           }else{
 
             final elem = element as XmlElement;
-            elements.addAll(decodeXml(element,isEmptyLine: elem.qualifiedName=="empty-line"));
+
+            elements.addAll(decodeXml(elem,isEmptyBlock: elem.qualifiedName=="empty-line" || elem.qualifiedName=="image"));
             if(element.qualifiedName=="section"){
               final separator  = createSectionSeparator();
 
