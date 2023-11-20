@@ -35,7 +35,7 @@ class HyphenatedTextFactory {
 
       final document = XmlDocument.parse(xmlText);
       final annotation =  document.findAllElements("annotation");
-      final List<dynamic> elements = document.findAllElements("body").map((e) => [e,XmlDecoder.createSectionSeparator()]) .expand((element) => element).toList();
+      final List<dynamic> elements = document.findAllElements("body").toList();
       // if(annotation.isNotEmpty){
       //   elements.insert(0, annotation.first);
       // }

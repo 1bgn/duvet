@@ -35,7 +35,7 @@ class _BookPageState extends State<BookPage> {
       int index = 0;
       for (var element in _elements) {
         element.index = index;
-        index += element.text.length;
+        index += element.text.isEmpty?1: element.text.length;
       }
 
       wordsInBook = (_elements

@@ -210,7 +210,7 @@ class TextDecorator {
     return combinedElements;
   }
   static MediumMetrics mediumMetrics(int countWordsInBook, double maxWidth, double maxHeight, List<StyledElement> elements){
-    int testPages = 5;
+    int testPages = 1;
     PageBundle? pageBundle ;
     int lines = 0;
     int words = 0;
@@ -320,10 +320,14 @@ class TextDecorator {
       textPainter.layout(maxWidth: maxWidth);
 
      if(   element.styledNode.childAndParents.parents.first.qualifiedName=="section-separator"){
-    maxHeight = 0;
-    //не отображается  "пролог"
+       maxHeight = 0;
+       print("VREVGBSRFVX ${spans}");
+       spans.add(element);
+       break;
+       //не отображается  "пролог"
 
-    }else if (textPainter.height > maxHeight) {
+     }else
+       if (textPainter.height > maxHeight) {
         final removedElement = spans.removeLast();
         TextPainter removedTextPainter = TextPainter(
             text: removedElement.inlineSpan,textAlign: removedElement.styledNode.textAlign, textDirection: TextDirection.ltr);

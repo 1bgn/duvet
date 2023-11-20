@@ -59,6 +59,7 @@ class _PagerState extends State<Pager> {
 
   void initCurrentPage(int indexPage, bool indexContains,
       {bool fromBefore = false}) {
+    print("initCurrentPage() $indexPage");
     final currentElements = fromBefore
         ? TextDecorator.skipElementTo(0, bookData.elements,
         indexContains: indexContains)
@@ -126,6 +127,8 @@ class _PagerState extends State<Pager> {
 
   @override
   Widget build(BuildContext context) {
+
+
     final metrics = TextDecorator.mediumMetrics(bookData.countWordsInBook,
         bookData.size.maxWidth, bookData.size.maxHeight, bookData.elements);
     print("${metrics}");
@@ -152,7 +155,7 @@ class _PagerState extends State<Pager> {
           },
           itemBuilder: (BuildContext context, int index) {
             if (orientation != lastOrientation) {
-              pages.clear();
+              // pages.clear();
               // bookData.resetElements();
               initCurrentPage(index, true);
               lastOrientation = orientation;
@@ -161,7 +164,7 @@ class _PagerState extends State<Pager> {
                       currentPage!.topElement.index, bookData.elements,
                       metrics)}");
             } else if (currentDirection == -1 && index == 0) {
-              pages.clear();
+              // pages.clear();
               initCurrentPage(index, true, fromBefore: true);
             }
             PageBundle? page;
