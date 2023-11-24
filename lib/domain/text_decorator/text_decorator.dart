@@ -322,11 +322,13 @@ class TextDecorator {
 
       }else if( element.styledNode.childAndParents.parents.first.qualifiedName=="image"){
        final imageId = element.styledNode.childAndParents.child.getAttribute("l:href")!.replaceFirst("#", "");
-       // final bytes = base64Decode(binary);
+       final bytes = base64Decode(binaries[imageId]!.text);
        //
-       // final decodedImage = await decodeImageFromList(bytes);
-
-       print("IMAGE ${binaries[imageId]}");
+       final decodedImage =  decodeImageFromList(bytes);
+        decodedImage.then((value) {
+          print("it is IMAGE ${value.height}");
+        });
+       // print("IMAGE ${binaries[imageId]}");
         continue;
       }
        textPainter = TextPainter(
