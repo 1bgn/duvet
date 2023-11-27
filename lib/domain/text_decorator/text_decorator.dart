@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:image/image.dart';
 import 'package:projects/domain/model/child_and_parents.dart';
 import 'package:projects/domain/model/medium_metrics.dart';
 import 'package:projects/domain/model/page_bundle.dart';
@@ -213,13 +214,13 @@ class TextDecorator {
     }
     return combinedElements;
   }
-  static Future<MediumMetrics> mediumMetrics( double devicePixelRatio,int countWordsInBook, double maxWidth, double maxHeight, List<StyledElement> elements,Map<String,XmlNode> binaries) async {
+  static MediumMetrics mediumMetrics( double devicePixelRatio,int countWordsInBook, double maxWidth, double maxHeight, List<StyledElement> elements,Map<String,XmlNode> binaries)  {
     int testPages = 5;
     PageBundle? pageBundle ;
     int lines = 0;
     int words = 0;
     for (int i = 0;i<testPages;i++){
-      pageBundle =await  getNextPageBundle(devicePixelRatio,maxWidth, maxHeight, elements,binaries);
+      pageBundle =  getNextPageBundle(devicePixelRatio,maxWidth, maxHeight, elements,binaries);
       lines += pageBundle.lines;
       words += pageBundle.currentElements.map((e) => e.text.split(" ").length).fold(0, (previousValue, element) => previousValue+element);
       elements = skipElement(pageBundle.rightPartOfElement?.styledNode.childAndParents.id??pageBundle.currentElements.last.styledNode.childAndParents.id, elements);
@@ -317,8 +318,8 @@ class TextDecorator {
   }
 
 
-  static Future<PageBundle> getNextPageBundle(
-      double devicePixelRatio,double maxWidth, double maxHeight, List<StyledElement> elements,Map<String,XmlNode> binaries)async {
+  static PageBundle getNextPageBundle(
+      double devicePixelRatio,double maxWidth, double maxHeight, List<StyledElement> elements,Map<String,XmlNode> binaries) {
     List<StyledElement> spans = [];
     // elements = elements.skip(40).toList();
     int removedLines = 0;
@@ -334,10 +335,11 @@ class TextDecorator {
       }     if( element.styledNode.childAndParents.parents.first.qualifiedName=="image"){
         final imageId = element.styledNode.childAndParents.child.getAttribute("l:href")!.replaceFirst("#", "");
         final bytes = base64Decode(binaries[imageId]!.text);
-        final decodedImage = await decodeImageFromList(bytes);
+        final decodedImage = decodeImage(bytes)!;
         final width = decodedImage.width.toDouble()/devicePixelRatio;
 
-        final height = decodedImage.height.toDouble()/devicePixelRatio;
+        final height = 0.0;
+        // final height = decodedImage.height.toDouble()/devicePixelRatio;
         element = buildImage(element, bytes, Size(width , height));
 
         // spans.add(element);
@@ -349,8 +351,7 @@ class TextDecorator {
           textDirection: TextDirection.ltr);
 
       final List<PlaceholderDimensions> placeholderDimensions = [];
-
-      await Future.forEach(spans, (StyledElement element) async {
+      for (var element in spans) {
         if(element.isImage ){
           final size = element.imageSize!;
           placeholderDimensions.add( PlaceholderDimensions(
@@ -358,12 +359,13 @@ class TextDecorator {
             alignment: PlaceholderAlignment.middle,
           ));
         }
-      });
+      }
+
 
 
       textPainter.setPlaceholderDimensions(placeholderDimensions);
       textPainter.layout(maxWidth: maxWidth);
-fg
+
 
        if (textPainter.height > maxHeight) {
         final removedElement = spans.removeLast();
@@ -420,13 +422,12 @@ fg
     final bundle = PageBundle(currentElements: spans, leftPartOfElement:leftAndRightParts?[0] ,rightPartOfElement: leftAndRightParts?[1],lines: textPainter!.computeLineMetrics().length-removedLines);
     return bundle;
   }
-  static Future<PageBundle> getPreviousPageBundle(
-      double maxWidth, double maxHeight, List<StyledElement> elements) async{
+  static PageBundle getPreviousPageBundle(
+      double devicePixelRatio, double maxWidth, double maxHeight, List<StyledElement> elements,Map<String,XmlNode> binaries) {
     if(elements.isEmpty){
       return PageBundle(currentElements: [], leftPartOfElement: null, rightPartOfElement: null, lines: 0);
     }
     List<StyledElement> spans = [];
-    int lns = 0;
 
     List<StyledElement>? leftAndRightParts;
     TextPainter? textPainter;
@@ -441,7 +442,7 @@ fg
       }     if( element.styledNode.childAndParents.parents.first.qualifiedName=="image"){
         final imageId = element.styledNode.childAndParents.child.getAttribute("l:href")!.replaceFirst("#", "");
         final bytes = base64Decode(binaries[imageId]!.text);
-        final decodedImage = await decodeImageFromList(bytes);
+        final decodedImage = decodeImage(bytes)!;
         final width = decodedImage.width.toDouble()/devicePixelRatio;
 
         final height = decodedImage.height.toDouble()/devicePixelRatio;
@@ -455,8 +456,7 @@ fg
           text: TextSpan(children: spans.reversed.map((e) => e.inlineSpan).toList()),
           textDirection: TextDirection.ltr);
       final List<PlaceholderDimensions> placeholderDimensions = [];
-
-      await Future.forEach(spans, (StyledElement element) async {
+      for (var element in spans) {
         if(element.isImage ){
           final size = element.imageSize!;
           placeholderDimensions.add( PlaceholderDimensions(
@@ -464,7 +464,8 @@ fg
             alignment: PlaceholderAlignment.middle,
           ));
         }
-      });
+      }
+
 
 
       textPainter.setPlaceholderDimensions(placeholderDimensions);
@@ -472,6 +473,7 @@ fg
       if (textPainter.height > maxHeight ) {
 
         final removedElement = spans.removeLast();
+
         // print("REMOVED1 ${textPainter.text!.toPlainText()} ${textPainter.height} $maxHeight");
         // print("REMOVED2 ${textPainter.height} $maxHeight");
 
@@ -481,6 +483,12 @@ fg
             // print("SPLIT $removedElement");
             TextPainter removedTextPainter = TextPainter(
                 text: removedElement.inlineSpan, textDirection: TextDirection.ltr);
+            if(removedElement.isImage){
+              final freeHeight =  maxHeight - ((textPainter.height) - removedElement.imageSize!.height);
+              final resizedImage = resizeImage(removedElement, Size(removedElement.imageSize!.width, freeHeight));
+              spans.add(resizedImage);
+              continue;
+            }
             removedTextPainter.layout(maxWidth: maxWidth);
             final lines = removedTextPainter.computeLineMetrics();
 
@@ -495,7 +503,7 @@ fg
             }
             final freeLines =
             (freeHeight / lineHeight).truncate();
-            lns += freeLines;
+
             // print("free height $freeHeight,free lines $freeLines");
 
 
@@ -514,7 +522,7 @@ fg
         print("=====");
         break;
       }
-      lns += textPainter.computeLineMetrics().length;
+
       spans.add(element);
     }
     // if (textPainter!.height < maxHeight) {
