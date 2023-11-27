@@ -1,9 +1,11 @@
+import 'dart:typed_data';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:projects/domain/hyphenator/hyphenator.dart';
 import 'package:projects/domain/model/style_attributes.dart';
 import 'package:projects/domain/model/styled_node.dart';
-
+import 'dart:ui' as ui;
 class StyledElement {
   final bool isInline;
   final StyledNode styledNode;
@@ -13,8 +15,11 @@ class StyledElement {
   static final _hyphenator =  Hyphenator();
   int index = 0;
   final bool isSplitted;
+  Uint8List? image;
+  Size? imageSize;
 
   String? _text;
+
 
   @override
   String toString() {
@@ -24,6 +29,8 @@ class StyledElement {
   StyledElement(
       {required this.isInline,
       required this.styledNode,
+        this.image,
+        this.imageSize,
       this.isSplitted = false});
 
   String get text {
@@ -32,17 +39,24 @@ class StyledElement {
     return _text!;
   }
 
+  bool get isImage =>image!=null;
   InlineSpan get inlineSpan {
-    _inlineSpan ??= isInline
-        ? TextSpan(
-            text: text,
-            style: styledNode.textStyle,
-          )
-        : TextSpan(text: "$text\n", style: styledNode.textStyle);
+    if(_inlineSpan ==null){
+      if(isImage){
+      _inlineSpan = WidgetSpan(child: Image.memory(image!.buffer.asUint8List(),width: imageSize!.width,height: imageSize!.height,fit: BoxFit.contain,));
+      }else{
+        _inlineSpan = isInline
+            ? TextSpan(
+          text: text,
+          style: styledNode.textStyle,
+        )
+            : TextSpan(text: "$text\n", style: styledNode.textStyle);
+      }
+    }
     return _inlineSpan!;
   }
   InlineSpan get textSpan {
-    return TextSpan(
+    return isImage?WidgetSpan(child: Image.memory(image!.buffer.asUint8List(),width: imageSize!.width,height: imageSize!.height,fit: BoxFit.contain)):TextSpan(
       text: text,
       style: styledNode.textStyle,
     );

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -6,14 +7,14 @@ import 'package:projects/domain/model/child_and_parents.dart';
 import 'package:projects/domain/model/medium_metrics.dart';
 import 'package:projects/domain/model/page_bundle.dart';
 import 'package:projects/domain/model/styled_element.dart';
-
+import 'dart:ui' as ui;
 import 'package:projects/domain/model/styled_node.dart';
 
 import 'package:xml/xml.dart';
 
 class TextDecorator {
   static final inlineTags = [
-    "a","strong","emphasis","section-separator","image"
+    "a","strong","emphasis","section-separator","image","sup"
   ];
 
   static final outlineTags = [
@@ -56,7 +57,7 @@ class TextDecorator {
 
   static StyledNode createStyledNode(
     ChildAndParents childAndParents,
-  ) {
+) {
     TextStyle textStyle = const TextStyle(inherit: true,color: Colors.black);
     TextAlign textAlign = TextAlign.justify;
     for (var element in childAndParents.parents.reversed) {
@@ -69,7 +70,8 @@ class TextDecorator {
           case "text-author":
           {
 
-           textStyle = textStyle.merge(TextStyle(fontWeight: FontWeight.bold,fontSize: 14));
+           textStyle = textStyle.merge(TextStyle(fontSize: 14));
+
           }
         case "title":
           {
@@ -112,7 +114,7 @@ class TextDecorator {
       }
     }
 
-    return StyledNode(childAndParents: childAndParents, textStyle: textStyle,textAlign: textAlign);
+    return StyledNode(childAndParents: childAndParents, textStyle: textStyle,textAlign: textAlign,);
   }
 
   static List<StyledElement> layoutElements(
@@ -211,13 +213,13 @@ class TextDecorator {
     }
     return combinedElements;
   }
-  static MediumMetrics mediumMetrics(int countWordsInBook, double maxWidth, double maxHeight, List<StyledElement> elements,Map<String,XmlNode> binaries){
+  static Future<MediumMetrics> mediumMetrics( double devicePixelRatio,int countWordsInBook, double maxWidth, double maxHeight, List<StyledElement> elements,Map<String,XmlNode> binaries) async {
     int testPages = 5;
     PageBundle? pageBundle ;
     int lines = 0;
     int words = 0;
     for (int i = 0;i<testPages;i++){
-      pageBundle = getNextPageBundle(maxWidth, maxHeight, elements,binaries);
+      pageBundle =await  getNextPageBundle(devicePixelRatio,maxWidth, maxHeight, elements,binaries);
       lines += pageBundle.lines;
       words += pageBundle.currentElements.map((e) => e.text.split(" ").length).fold(0, (previousValue, element) => previousValue+element);
       elements = skipElement(pageBundle.rightPartOfElement?.styledNode.childAndParents.id??pageBundle.currentElements.last.styledNode.childAndParents.id, elements);
@@ -306,45 +308,78 @@ class TextDecorator {
     }
 
   }
+  static StyledElement buildImage(StyledElement styledElement,Uint8List bytes,Size imageSize){
+    return styledElement.isInline?createInlineElement(styledElement.styledNode,image: bytes,imageSize: imageSize):createBlockElement(styledElement.styledNode,image: bytes,imageSize: imageSize);
+  }
+  static StyledElement resizeImage(StyledElement styledElement,Size newSize){
+    assert(styledElement.isImage);
+    return buildImage(styledElement, styledElement.image!, newSize);
+  }
 
-  static PageBundle getNextPageBundle(
-      double maxWidth, double maxHeight, List<StyledElement> elements,Map<String,XmlNode> binaries) {
+
+  static Future<PageBundle> getNextPageBundle(
+      double devicePixelRatio,double maxWidth, double maxHeight, List<StyledElement> elements,Map<String,XmlNode> binaries)async {
     List<StyledElement> spans = [];
     // elements = elements.skip(40).toList();
     int removedLines = 0;
     List<StyledElement>? leftAndRightParts;
     TextPainter? textPainter ;
+
     for (var element in elements) {
       if(   element.styledNode.childAndParents.parents.first.qualifiedName=="section-separator"){
         maxHeight = 0;
         spans.add(element);
         break;
 
-      }else if( element.styledNode.childAndParents.parents.first.qualifiedName=="image"){
-       final imageId = element.styledNode.childAndParents.child.getAttribute("l:href")!.replaceFirst("#", "");
-       final bytes = base64Decode(binaries[imageId]!.text);
-       //
-       final decodedImage =  decodeImageFromList(bytes);
-        decodedImage.then((value) {
-          print("it is IMAGE ${value.height}");
-        });
-       // print("IMAGE ${binaries[imageId]}");
-        continue;
+      }     if( element.styledNode.childAndParents.parents.first.qualifiedName=="image"){
+        final imageId = element.styledNode.childAndParents.child.getAttribute("l:href")!.replaceFirst("#", "");
+        final bytes = base64Decode(binaries[imageId]!.text);
+        final decodedImage = await decodeImageFromList(bytes);
+        final width = decodedImage.width.toDouble()/devicePixelRatio;
+
+        final height = decodedImage.height.toDouble()/devicePixelRatio;
+        element = buildImage(element, bytes, Size(width , height));
+
+        // spans.add(element);
+
+
       }
        textPainter = TextPainter(
           text: TextSpan(children: spans.map((e) => e.inlineSpan).toList()),
           textDirection: TextDirection.ltr);
-      textPainter.layout(maxWidth: maxWidth);
 
+      final List<PlaceholderDimensions> placeholderDimensions = [];
+
+      await Future.forEach(spans, (StyledElement element) async {
+        if(element.isImage ){
+          final size = element.imageSize!;
+          placeholderDimensions.add( PlaceholderDimensions(
+            size: size,
+            alignment: PlaceholderAlignment.middle,
+          ));
+        }
+      });
+
+
+      textPainter.setPlaceholderDimensions(placeholderDimensions);
+      textPainter.layout(maxWidth: maxWidth);
+fg
 
        if (textPainter.height > maxHeight) {
         final removedElement = spans.removeLast();
         TextPainter removedTextPainter = TextPainter(
             text: removedElement.inlineSpan,textAlign: removedElement.styledNode.textAlign, textDirection: TextDirection.ltr);
+
+        if(removedElement.isImage){
+          final freeHeight =  maxHeight - ((textPainter.height) - removedElement.imageSize!.height);
+          final resizedImage = resizeImage(removedElement, Size(removedElement.imageSize!.width, freeHeight));
+          spans.add(resizedImage);
+        continue;
+        }
         removedTextPainter.layout(maxWidth: maxWidth);
         final lines = removedTextPainter.computeLineMetrics();
         final freeHeight =
-            maxHeight - (textPainter.height - removedTextPainter.height);
+            maxHeight - ((textPainter.height) - removedTextPainter.height);
         double lineHeight = -1;
         for (var element in lines) {
           if(element.height>lineHeight){
@@ -385,8 +420,8 @@ class TextDecorator {
     final bundle = PageBundle(currentElements: spans, leftPartOfElement:leftAndRightParts?[0] ,rightPartOfElement: leftAndRightParts?[1],lines: textPainter!.computeLineMetrics().length-removedLines);
     return bundle;
   }
-  static PageBundle getPreviousPageBundle(
-      double maxWidth, double maxHeight, List<StyledElement> elements) {
+  static Future<PageBundle> getPreviousPageBundle(
+      double maxWidth, double maxHeight, List<StyledElement> elements) async{
     if(elements.isEmpty){
       return PageBundle(currentElements: [], leftPartOfElement: null, rightPartOfElement: null, lines: 0);
     }
@@ -398,9 +433,41 @@ class TextDecorator {
 
 
     for (var element in elements.reversed) {
+      if(   element.styledNode.childAndParents.parents.first.qualifiedName=="section-separator"){
+        maxHeight = 0;
+        spans.add(element);
+        break;
+
+      }     if( element.styledNode.childAndParents.parents.first.qualifiedName=="image"){
+        final imageId = element.styledNode.childAndParents.child.getAttribute("l:href")!.replaceFirst("#", "");
+        final bytes = base64Decode(binaries[imageId]!.text);
+        final decodedImage = await decodeImageFromList(bytes);
+        final width = decodedImage.width.toDouble()/devicePixelRatio;
+
+        final height = decodedImage.height.toDouble()/devicePixelRatio;
+        element = buildImage(element, bytes, Size(width , height));
+
+        // spans.add(element);
+
+
+      }
        textPainter = TextPainter(
           text: TextSpan(children: spans.reversed.map((e) => e.inlineSpan).toList()),
           textDirection: TextDirection.ltr);
+      final List<PlaceholderDimensions> placeholderDimensions = [];
+
+      await Future.forEach(spans, (StyledElement element) async {
+        if(element.isImage ){
+          final size = element.imageSize!;
+          placeholderDimensions.add( PlaceholderDimensions(
+            size: size,
+            alignment: PlaceholderAlignment.middle,
+          ));
+        }
+      });
+
+
+      textPainter.setPlaceholderDimensions(placeholderDimensions);
       textPainter.layout(maxWidth: maxWidth);
       if (textPainter.height > maxHeight ) {
 
@@ -578,12 +645,12 @@ class TextDecorator {
 
 
 
-  static StyledElement createInlineElement(StyledNode styledNode) {
-    return StyledElement(isInline: true, styledNode: styledNode);
+  static StyledElement createInlineElement(StyledNode styledNode, {Uint8List? image,Size? imageSize}) {
+    return StyledElement(isInline: true, styledNode: styledNode,image: image,imageSize: imageSize);
   }
 
-  static StyledElement createBlockElement(StyledNode styledNode) {
-    return StyledElement(isInline: false, styledNode: styledNode);
+  static StyledElement createBlockElement(StyledNode styledNode, {Uint8List? image,Size? imageSize}) {
+    return StyledElement(isInline: false, styledNode: styledNode,image: image,imageSize:imageSize);
   }
 
   static bool isInlineNode(ChildAndParents element) {

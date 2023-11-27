@@ -40,7 +40,7 @@ class HyphenatedTextFactory {
       final annotation =  document.findAllElements("annotation");
       final List<dynamic> elements = document.findAllElements("body").toList();
       final binaries = document.findAllElements("binary").toList();
-      print("binaries $binaries");
+
       // if(annotation.isNotEmpty){
       //   elements.insert(0, annotation.first);
       // }

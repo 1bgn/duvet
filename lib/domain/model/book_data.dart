@@ -6,9 +6,10 @@ class BookData{
   final DecodedXml decodedXml;
   final BoxConstraints size;
   final int countWordsInBook;
+  final double devicePixelRatio;
   late final List<StyledElement> _originalElements;
 
-  BookData({required this.decodedXml, required this.size, required this.countWordsInBook}){
+  BookData({required this.decodedXml, required this.size, required this.devicePixelRatio,required this.countWordsInBook}){
     _originalElements = List.from(decodedXml.elements);
 
   }

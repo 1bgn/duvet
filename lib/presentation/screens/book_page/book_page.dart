@@ -26,7 +26,7 @@ class _BookPageState extends State<BookPage> {
 
   @override
   void initState() {
-    rootBundle.load("assets/books/book6.fb2").then((value)async {
+    rootBundle.load("assets/books/book7.fb2").then((value)async {
 
       decodedXml = HyphenatedTextFactory.elementsFromXml(
           xmlText: utf8.decode(value.buffer.asUint8List()).replaceAll("\n", ""));
@@ -64,6 +64,7 @@ class _BookPageState extends State<BookPage> {
                     Expanded(
                         child: Pager(
                       bookData: BookData(
+                        devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
                         countWordsInBook: wordsInBook,
                         decodedXml: decodedXml,
                         size: size,

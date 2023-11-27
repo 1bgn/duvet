@@ -7,5 +7,6 @@ class StyledNode {
   final TextStyle textStyle;
   final TextAlign textAlign;
 
+
   StyledNode({required this.childAndParents, required this.textStyle,required this.textAlign});
 }

@@ -59,8 +59,8 @@ class _PagerState extends State<Pager> {
     super.initState();
   }
 
-  void initCurrentPage(int indexPage, bool indexContains,
-      {bool fromBefore = false}) {
+  Future<void> initCurrentPage(int indexPage, bool indexContains,
+      {bool fromBefore = false}) async {
     // print("initCurrentPage() $indexPage");
     final currentElements = fromBefore
         ? TextDecorator.skipElementTo(0, bookData.decodedXml.elements,
@@ -69,20 +69,20 @@ class _PagerState extends State<Pager> {
         currentPage?.topElement.index ?? 0, bookData.decodedXml.elements,
         indexContains: indexContains);
 
-    currentPage = TextDecorator.getNextPageBundle(
+    currentPage =await TextDecorator.getNextPageBundle(bookData.devicePixelRatio,
         bookData.size.maxWidth, bookData.size.maxHeight, currentElements,bookData.decodedXml.binaries);
     if (currentPage?.rightPartOfElement != null) {
       TextDecorator.insertFragment(currentPage!.leftPartOfElement!,
           currentPage!.rightPartOfElement!, bookData.decodedXml.elements);
     }
     pages.putIfAbsent(indexPage, () => currentPage!);
-    initNextPage(indexPage + 1);
+    await initNextPage(indexPage + 1);
 
     initPrevPage(indexPage - 1);
     print("initCurrentPage");
   }
 
-  void initNextPage(int nextIndex) {
+  Future<void> initNextPage(int nextIndex) async {
     if (nextPage?.rightPartOfElement != null) {
       TextDecorator.insertFragment(nextPage!.leftPartOfElement!,
           nextPage!.rightPartOfElement!, bookData.decodedXml.elements);
@@ -91,7 +91,7 @@ class _PagerState extends State<Pager> {
     final nextElements =
     TextDecorator.skipElementTo(globalIndex, bookData.decodedXml.elements);
 
-    nextPage = TextDecorator.getNextPageBundle(
+    nextPage =await TextDecorator.getNextPageBundle(bookData.devicePixelRatio,
         bookData.size.maxWidth, bookData.size.maxHeight, nextElements, bookData.decodedXml.binaries);
     pages.putIfAbsent(nextIndex, () => nextPage!);
     // print("$globalIndex");
@@ -131,107 +131,116 @@ class _PagerState extends State<Pager> {
   Widget build(BuildContext context) {
 
 
-    final metrics = TextDecorator.mediumMetrics(bookData.countWordsInBook,
+    final metrics = TextDecorator.mediumMetrics(bookData.devicePixelRatio,bookData.countWordsInBook,
         bookData.size.maxWidth, bookData.size.maxHeight, bookData.decodedXml.elements, bookData.decodedXml.binaries);
     print("${metrics}");
 
-    return OrientationBuilder(builder: (context, orientation) {
-      return NotificationListener(
-        child: PageView.builder(
-          physics: BouncingScrollPhysics(),
-          pageSnapping: true,
-          onPageChanged: (index) {
-            // lastIndex =index;
-            // if(lastIndex<index){
-            //   print("it was next page");
-            //   afterDirection = 1;
-            //   initNextPage();
+    return FutureBuilder(
+      future: metrics,
+      builder: (context,snapshot) {
+        if(!snapshot.hasData){
+          return CircularProgressIndicator();
+        }
 
-            // }else if(lastIndex>index){
-            //   print("it was prev page");
-            //   afterDirection = -1;
-            //   initPrevPage();
-            // }else{
-            //   afterDirection = 0;
-            // }
-          },
-          itemBuilder: (BuildContext context, int index) {
-            if (orientation != lastOrientation) {
-              // pages.clear();
-              // bookData.resetElements();
-              initCurrentPage(index, true);
-              lastOrientation = orientation;
-              // print(
-              //     "pages before ${TextDecorator.pagesBefore(
-              //         currentPage!.topElement.index, bookData.elements,
-              //         metrics)}");
-            } else if (currentDirection == -1 && index == 0) {
-              // pages.clear();
-              initCurrentPage(index, true, fromBefore: true);
-            }
-            PageBundle? page;
-            print("direction $currentDirection $globalIndex");
+        return OrientationBuilder(builder: (context, orientation) {
+          return NotificationListener(
+            child: PageView.builder(
+              physics: BouncingScrollPhysics(),
+              pageSnapping: true,
+              onPageChanged: (index) {
+                // lastIndex =index;
+                // if(lastIndex<index){
+                //   print("it was next page");
+                //   afterDirection = 1;
+                //   initNextPage();
 
-            if (currentDirection == 1) {
-              page = pages[index];
-              currentPage = page;
-              // print("BUILD NEXT PAGE ${pages[index]}");
-            } else if (currentDirection == -1) {
-              page = pages[index];
-              currentPage = page;
-              // print("BUILD PREV PAGE $index");
-            } else {
-              // print("INITPAGE");
-              page = pages[index];
-            }
+                // }else if(lastIndex>index){
+                //   print("it was prev page");
+                //   afterDirection = -1;
+                //   initPrevPage();
+                // }else{
+                //   afterDirection = 0;
+                // }
+              },
+              itemBuilder: (BuildContext context, int index) {
+                if (orientation != lastOrientation) {
+                  // pages.clear();
+                  // bookData.resetElements();
+                  initCurrentPage(index, true);
+                  lastOrientation = orientation;
+                  // print(
+                  //     "pages before ${TextDecorator.pagesBefore(
+                  //         currentPage!.topElement.index, bookData.elements,
+                  //         metrics)}");
+                } else if (currentDirection == -1 && index == 0) {
+                  // pages.clear();
+                  initCurrentPage(index, true, fromBefore: true);
+                }
+                PageBundle? page;
+                print("direction $currentDirection $globalIndex");
 
-            // for (var element in page!.groupByLines()) {
-            //   print("TEXTE: ${element}");
-            // }
+                if (currentDirection == 1) {
+                  page = pages[index];
+                  currentPage = page;
+                  // print("BUILD NEXT PAGE ${pages[index]}");
+                } else if (currentDirection == -1) {
+                  page = pages[index];
+                  currentPage = page;
+                  // print("BUILD PREV PAGE $index");
+                } else {
+                  // print("INITPAGE");
+                  page = pages[index];
+                }
+
+                // for (var element in page!.groupByLines()) {
+                //   print("TEXTE: ${element}");
+                // }
 
 
-            return SizedBox(width: bookData.size.maxWidth,
-                child: SingleChildScrollView(
-                  child: Column(children: page!.groupByLines().map((e) =>
-                      Row(
-                        children: [
-                          Expanded(child: RichText(textAlign:e.last.styledNode.textAlign, text: TextSpan(
-                              children: e.map((e) => e.textSpan).toList(),),)),
-                        ],
-                      )).toList(),),
-                ));
+                return SizedBox(width: bookData.size.maxWidth,
+                    child: SingleChildScrollView(
+                      child: Column(children: page!.groupByLines().map((e) =>
+                          Row(
+                            children: [
+                              Expanded(child: RichText(textAlign:e.last.styledNode.textAlign, text: TextSpan(
+                                children: e.map((e) => e.textSpan).toList(),),)),
+                            ],
+                          )).toList(),),
+                    ));
 
-            return RichText(
+                return RichText(
 
-              text: TextSpan(
-                  children: page!.currentElements
-                      .map((e) => e.inlineSpan)
-                      .toList(),
-                  style: TextStyle(color: Colors.black)),
-            );
-          },
-          controller: pageController,
-          itemCount: metrics.pages,
-        ),
-        onNotification: (notification) {
-          if (notification is ScrollEndNotification) {
-            // afterDirection = pageController.page!.truncate()>lastIndex?1:-1;
-            // print("on ScrollEndNotification");
-            if (lastIndex < pageController.page!) {
-              initNextPage(pageController.page!.round() + 1);
-            } else if (lastIndex > pageController.page!) {
-              initPrevPage(pageController.page!.truncate() - 1);
-            }
+                  text: TextSpan(
+                      children: page!.currentElements
+                          .map((e) => e.inlineSpan)
+                          .toList(),
+                      style: TextStyle(color: Colors.black)),
+                );
+              },
+              controller: pageController,
+              itemCount: snapshot.data!.pages,
+            ),
+            onNotification: (notification) {
+              if (notification is ScrollEndNotification) {
+                // afterDirection = pageController.page!.truncate()>lastIndex?1:-1;
+                // print("on ScrollEndNotification");
+                if (lastIndex < pageController.page!) {
+                  initNextPage(pageController.page!.round() + 1);
+                } else if (lastIndex > pageController.page!) {
+                  initPrevPage(pageController.page!.truncate() - 1);
+                }
 
-            // print("PAGE ${pageController.page} LAST INDEX: $lastIndex");
-            lastIndex = pageController.page!;
-            currentPage = pages[pageController.page!.truncate()];
+                // print("PAGE ${pageController.page} LAST INDEX: $lastIndex");
+                lastIndex = pageController.page!;
+                currentPage = pages[pageController.page!.truncate()];
 
-            //   globalIndex = currentPage!.bottomElement.index;
-          }
-          return true;
-        },
-      );
-    });
+                //   globalIndex = currentPage!.bottomElement.index;
+              }
+              return true;
+            },
+          );
+        });
+      }
+    );
   }
 }
