@@ -23,7 +23,7 @@ class StyledElement {
 
   @override
   String toString() {
-    return 'StyledElement{id: ${styledNode.childAndParents.id},isSplitted: $isSplitted ,index: $index, parents: ${styledNode.childAndParents.parents.map((e) => e.qualifiedName).join(" ")},isInline: $isInline, text: ${text.length>100?text.substring(0,100):text}}';
+    return 'StyledElement{id: ${styledNode.childAndParents.id},isSplitted: $isSplitted ,index: $index, parents: ${styledNode.childAndParents.parents.map((e) => e.qualifiedName).join(" ")},isInline: $isInline, text: ${text.length>100?text.substring(0,100):text} ${image!=null?",imageSize: $imageSize":""}';
   }
 
   StyledElement(
@@ -43,7 +43,8 @@ class StyledElement {
   InlineSpan get inlineSpan {
     if(_inlineSpan ==null){
       if(isImage){
-      _inlineSpan = WidgetSpan(child: Image.memory(image!.buffer.asUint8List(),width: imageSize!.width,height: imageSize!.height,fit: BoxFit.contain,));
+
+      _inlineSpan = WidgetSpan(child: Image.memory(image!.buffer.asUint8List(),width: imageSize!.width,height: imageSize!.height,fit: BoxFit.fill,),           alignment: PlaceholderAlignment.middle,);
       }else{
         _inlineSpan = isInline
             ? TextSpan(
@@ -56,39 +57,12 @@ class StyledElement {
     return _inlineSpan!;
   }
   InlineSpan get textSpan {
-    return isImage?WidgetSpan(child: Image.memory(image!.buffer.asUint8List(),width: imageSize!.width,height: imageSize!.height,fit: BoxFit.contain)):TextSpan(
+    return isImage?WidgetSpan(child: Image.memory(image!.buffer.asUint8List(),width: imageSize!.width,height: imageSize!.height,fit: BoxFit.fill),alignment: PlaceholderAlignment.middle,):TextSpan(
       text: text,
       style: styledNode.textStyle,
     );
 
   }
 
-  InlineSpan get widgetInlineSpan {
-    if(isInline ){
-      return  WidgetSpan(
-          child: RichText(
-              text: TextSpan(
-                text: text,
-                style: styledNode.textStyle,
-              )));
-    }else{
-      return  WidgetSpan(
 
-          child: RichText(
-            text: TextSpan(text: "$text\n", style: styledNode.textStyle,children: []),
-          ));
-      return  WidgetSpan(
-          child: Row(
-            children: [
-              Expanded(
-                child: RichText(
-                  text: TextSpan(text: "$text", style: styledNode.textStyle,children: []),
-                ),
-              ),
-            ],
-          ));
-    }
-
-
-  }
 }

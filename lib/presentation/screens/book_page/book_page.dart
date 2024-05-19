@@ -30,9 +30,10 @@ class _BookPageState extends State<BookPage> {
 
       decodedXml = HyphenatedTextFactory.elementsFromXml(
           xmlText: utf8.decode(value.buffer.asUint8List()).replaceAll("\n", ""));
-      decodedXml.elements.take(50).forEach((element) {
-        print("FIRST TEXT $element");
-      });
+      // decodedXml.elements.take(50).forEach((element) {
+      //   print("FIRST TEXT $element");
+      // });
+
       int index = 0;
       for (var element in decodedXml.elements) {
         element.index = index;

@@ -35,6 +35,7 @@ class _PagerState extends State<Pager> {
   @override
   void initState() {
     double lastIndexPos = 0;
+
     initCurrentPage(initialPage, true);
     // Future.delayed(Duration(seconds: 1)).then((value) {
     //   Stream.periodic(Duration(milliseconds: 50)).listen((event) {

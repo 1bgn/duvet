@@ -179,7 +179,9 @@ class TextDecorator {
         } else if (isInlineNode(lastElement) && !isInlineNode(currentElement)) {
           //упростить
           if (lastElement.id == currentElement.id) {
-
+            combinedElements.removeLast();
+            combinedElements
+                .add(createInlineElement(createStyledNode(lastElement)));
             combinedElements
                 .add(createBlockElement(createStyledNode(currentElement)));
 
@@ -310,12 +312,15 @@ class TextDecorator {
 
   }
   static StyledElement buildImage(StyledElement styledElement,Uint8List bytes,Size imageSize){
-    return styledElement.isInline?createInlineElement(styledElement.styledNode,image: bytes,imageSize: imageSize):createBlockElement(styledElement.styledNode,image: bytes,imageSize: imageSize);
+    final element =  styledElement.isInline?createInlineElement(styledElement.styledNode,image: bytes,imageSize: imageSize):createBlockElement(styledElement.styledNode,image: bytes,imageSize: imageSize);
+    element.index = styledElement.index;
+
+    return element;
   }
-  static StyledElement resizeImage(StyledElement styledElement,Size newSize){
-    assert(styledElement.isImage);
-    return buildImage(styledElement, styledElement.image!, newSize);
-  }
+  // static StyledElement resizeImage(StyledElement styledElement,Size newSize){
+  //   assert(styledElement.isImage);
+  //   return buildImage(styledElement, styledElement.image!, newSize);
+  // }
 
 
   static PageBundle getNextPageBundle(
@@ -332,30 +337,38 @@ class TextDecorator {
         spans.add(element);
         break;
 
-      }     if( element.styledNode.childAndParents.parents.first.qualifiedName=="image"){
+      }
+      if( element.styledNode.childAndParents.parents.first.qualifiedName=="image"){
         final imageId = element.styledNode.childAndParents.child.getAttribute("l:href")!.replaceFirst("#", "");
         final bytes = base64Decode(binaries[imageId]!.text);
         final decodedImage = decodeImage(bytes)!;
-        final width = decodedImage.width.toDouble()/devicePixelRatio;
+        final imageWidth = decodedImage.width/devicePixelRatio;
+        final imageHeight = decodedImage.height/devicePixelRatio;
+        var width = maxWidth;
+        final scaleWidth = maxWidth/imageWidth;
+        var height = imageHeight*scaleWidth;
+        // if(height>maxHeight){
+        //   height = maxHeight;
+        // }
 
-        final height = 0.0;
-        // final height = decodedImage.height.toDouble()/devicePixelRatio;
-        element = buildImage(element, bytes, Size(width , height));
-
-        // spans.add(element);
+        element = buildImage(element, bytes, Size(width-10 , height-10));
+        print("buildImage(${Size(width , height)})");
 
 
       }
        textPainter = TextPainter(
-          text: TextSpan(children: spans.map((e) => e.inlineSpan).toList()),
+          text: TextSpan(children: spans.map((e) => e.inlineSpan).toList(),),
           textDirection: TextDirection.ltr);
 
       final List<PlaceholderDimensions> placeholderDimensions = [];
       for (var element in spans) {
         if(element.isImage ){
+
+
           final size = element.imageSize!;
           placeholderDimensions.add( PlaceholderDimensions(
             size: size,
+
             alignment: PlaceholderAlignment.middle,
           ));
         }
@@ -363,22 +376,27 @@ class TextDecorator {
 
 
 
-      textPainter.setPlaceholderDimensions(placeholderDimensions);
-      textPainter.layout(maxWidth: maxWidth);
+      textPainter.setPlaceholderDimensions(placeholderDimensions,);
+      textPainter.layout(maxWidth: maxWidth,);
+      print("next cycle ${textPainter.height} maxHeight: $maxHeight len:${spans.map((e) => e.inlineSpan)} element: $element");
 
 
        if (textPainter.height > maxHeight) {
+
         final removedElement = spans.removeLast();
+
+
+        if(removedElement.isImage){
+          print("removedElement ${textPainter.height} $maxHeight");
+          break;
+        }
         TextPainter removedTextPainter = TextPainter(
             text: removedElement.inlineSpan,textAlign: removedElement.styledNode.textAlign, textDirection: TextDirection.ltr);
 
-        if(removedElement.isImage){
-          final freeHeight =  maxHeight - ((textPainter.height) - removedElement.imageSize!.height);
-          final resizedImage = resizeImage(removedElement, Size(removedElement.imageSize!.width, freeHeight));
-          spans.add(resizedImage);
-        continue;
-        }
+
         removedTextPainter.layout(maxWidth: maxWidth);
+        // print("removedElement1 textPainter.height: ${textPainter.height} maxHeight:$maxHeight removedTextPainter.height: ${removedTextPainter.height} ${removedElement}");
+        // print("removedElement2  ${spans}");
         final lines = removedTextPainter.computeLineMetrics();
         final freeHeight =
             maxHeight - ((textPainter.height) - removedTextPainter.height);
@@ -414,6 +432,7 @@ class TextDecorator {
 
         break;
       } else if (textPainter.height == maxHeight) {
+
         break;
       }
 
@@ -484,10 +503,11 @@ class TextDecorator {
             TextPainter removedTextPainter = TextPainter(
                 text: removedElement.inlineSpan, textDirection: TextDirection.ltr);
             if(removedElement.isImage){
-              final freeHeight =  maxHeight - ((textPainter.height) - removedElement.imageSize!.height);
-              final resizedImage = resizeImage(removedElement, Size(removedElement.imageSize!.width, freeHeight));
-              spans.add(resizedImage);
-              continue;
+              // final freeHeight =  maxHeight - ((textPainter.height) - removedElement.imageSize!.height);
+              // final resizedImage = resizeImage(removedElement, Size(removedElement.imageSize!.width, freeHeight));
+              // spans.add(resizedImage);
+              // continue;
+              break;
             }
             removedTextPainter.layout(maxWidth: maxWidth);
             final lines = removedTextPainter.computeLineMetrics();
@@ -553,7 +573,7 @@ class TextDecorator {
     // print("RIGHTTEXT ${rightText.isEmpty}");
     final leftStyledElement = StyledElement(
       isSplitted: true,
-        isInline:  styledElement.isInline|| leftText.isEmpty,
+        isInline:  styledElement.isInline|| leftText.trim().isEmpty,
         styledNode: StyledNode(
           textAlign: styledElement.styledNode.textAlign,
             childAndParents: ChildAndParents(
@@ -568,7 +588,7 @@ class TextDecorator {
     leftStyledElement.index = styledElement.index ;
     final rightStyledElement = StyledElement(
         isSplitted: true,
-        isInline:  styledElement.isInline || rightText.isEmpty,
+        isInline:  styledElement.isInline || rightText.trim().isEmpty,
         styledNode: StyledNode(
             textAlign: styledElement.styledNode.textAlign,
             childAndParents: ChildAndParents(
